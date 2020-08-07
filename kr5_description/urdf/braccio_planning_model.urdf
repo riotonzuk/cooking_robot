@@ -224,8 +224,7 @@
     </joint>
     <joint name="sub_gripper_joint" type="revolute">
         <axis xyz="0 1 0" />
-        <mimic joint="gripper_joint" />
-        <limit effort="1.0" lower="1.2741" upper="2.3732" velocity="1.0" />
+        <limit effort="1.0" lower="0.1750" upper="1.2741" velocity="1.0" />
         <origin rpy="0 3.4383 0" xyz="-0.010 0 0.03" />
         <parent link="link_5" />
         <child link="left_gripper_link" />

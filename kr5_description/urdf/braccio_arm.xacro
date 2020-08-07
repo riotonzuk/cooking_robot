@@ -28,32 +28,32 @@
   </link>
 
     <link name="camera_link">
-	<visual>	
+	<visual>
 		<geometry>
 	            <box>
 	              <size>0.073 0.276 0.072</size>
 	            </box>
 	        </geometry>
-	<origin xyz="1.4 0 0.1" rpy="0 0 0"/>	
+	<origin xyz="1.4 0 0.1" rpy="0 0 0"/>
 	</visual>
 
-	<collision>	
+	<collision>
 		<geometry>
 	            <box>
 	              <size>0.073 0.276 0.072</size>
 	            </box>
 	          </geometry>
-	<origin xyz="1.4 0 0.1" rpy="0 0 0"/>	
+	<origin xyz="1.4 0 0.1" rpy="0 0 0"/>
 	</collision>
       <material name="orange"/>
     </link>
 
   <joint name="camera_joint" type="fixed">
-	<origin xyz="1.4 0 0.1" rpy="0 0 0"/>	
+	<origin xyz="1.4 0 0.1" rpy="0 0 0"/>
     <parent link="base_link"/>
     <child link="camera_link"/>
   </joint>
-  
+
   <link name="braccio_base_link">
     <visual>
       <geometry>
