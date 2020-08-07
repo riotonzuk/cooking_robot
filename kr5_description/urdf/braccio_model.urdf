@@ -15,16 +15,11 @@
             <material name="black" />
             <origin rpy="0 0 0" xyz="0 0 0" />
         </visual>
-        <collision>
-            <geometry>
-                <cylinder length="0.01" radius=".053" />
-            </geometry>
-            <origin rpy="0 0 0" xyz="0 0 0" />
-        </collision>
         <inertial>
+            <origin rpy="0 0 0" xyz="0 0 0" />
             <mass value="2" />
             <inertia ixx="0.015" ixy="0" ixz="0" iyy="0.00666666666667" iyz="0" izz="0.0216666666667" />
-        </inertial>
+        </inertial
     </link>
 
     <link name="link_1">
@@ -42,6 +37,7 @@
             <origin rpy="0 0 3.1416" xyz="0 0.004 0" />
         </collision>
         <inertial>
+            <origin rpy="0 0 3.1416" xyz="0 0.004 0" />
             <mass value="2" />
             <inertia ixx="0.015" ixy="0" ixz="0" iyy="0.00666666666667" iyz="0" izz="0.0216666666667" />
         </inertial>
@@ -62,6 +58,7 @@
             <origin rpy="0 0 0" xyz="-0.0045 0.0055 -0.026" />
         </collision>
         <inertial>
+            <origin rpy="0 0 0" xyz="-0.0045 0.0055 -0.026" />
             <mass value="0.1" />
             <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05" />
         </inertial>
@@ -82,6 +79,7 @@
             <origin rpy="0 0 0" xyz="-0.0045 0.005 -0.025" />
         </collision>
         <inertial>
+            <origin rpy="0 0 0" xyz="-0.0045 0.005 -0.025" />
             <mass value="0.1" />
             <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05" />
         </inertial>
@@ -102,6 +100,7 @@
             <origin rpy="0 0 0" xyz="0.003 -0.0004 -0.024" />
         </collision>
         <inertial>
+            <origin rpy="0 0 0" xyz="0.003 -0.0004 -0.024" />
             <mass value="0.1" />
             <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05" />
         </inertial>
@@ -122,6 +121,7 @@
             <origin rpy="0 0 0" xyz="0.006 0 0.0" />
         </collision>
         <inertial>
+            <origin rpy="0 0 0" xyz="0.006 0 0.0" />
             <mass value="0.1" />
             <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05" />
         </inertial>
@@ -243,56 +243,6 @@
         <color rgba="0 0 0 0.50" />
     </material>
 
-  <transmission name="a1_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a1">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="shoulder_pan_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  <transmission name="a2_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a2">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="shoulder_lift_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  <transmission name="a3_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a3">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="elbow_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  <transmission name="a4_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a4">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="wrist_1_motor">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  <transmission name="a5_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a5">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="wrist_2_motor">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
   <gazebo reference="link_1">
     <mu1>1</mu1>
     <mu2>1</mu2>

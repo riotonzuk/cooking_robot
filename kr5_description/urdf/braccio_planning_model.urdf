@@ -12,12 +12,6 @@
             <material name="black" />
             <origin rpy="0 0 0" xyz="0 0 0" />
         </visual>
-        <collision>
-            <geometry>
-                <cylinder length="0.01" radius=".053" />
-            </geometry>
-            <origin rpy="0 0 0" xyz="0 0 0" />
-        </collision>
         <inertial>
             <origin rpy="0 0 0" xyz="0 0 0" />
             <mass value="0.1"/>
@@ -40,7 +34,7 @@
             <origin rpy="0 0 0" xyz="0 0 0" />
         </collision>
         <inertial>
-            <origin rpy="0 0 3.1416" xyz="0 0.004 0" />
+            <origin rpy="0 0 0" xyz="0 0.002 0.031" />
             <mass value="0.1"/>
             <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
         </inertial>
@@ -61,7 +55,7 @@
             <origin rpy="0 0 0" xyz="-0.0045 0.0055 -0.026" />
         </collision>
         <inertial>
-            <origin rpy="0 0 0" xyz="-0.0045 0.0055 -0.026" />
+            <origin rpy="0 0 0" xyz="0 0.002 0.062" />
             <mass value="0.1"/>
             <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
         </inertial>
@@ -82,7 +76,7 @@
             <origin rpy="0 0 0" xyz="-0.0045 0.005 -0.025" />
         </collision>
         <inertial>
-            <origin rpy="0 0 0" xyz="-0.0045 0.005 -0.025" />
+            <origin rpy="0 0 0" xyz="0 0.002 0.062" />
             <mass value="0.1"/>
             <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
         </inertial>
@@ -103,7 +97,7 @@
             <origin rpy="0 0 0" xyz="0.003 -0.0004 -0.024" />
         </collision>
         <inertial>
-            <origin rpy="0 0 0" xyz="0.003 -0.0004 -0.024" />
+            <origin rpy="0 0 0" xyz="-0.004 -0.002 0.032" />
             <mass value="0.1"/>
             <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
         </inertial>
@@ -124,7 +118,7 @@
             <origin rpy="0 0 0" xyz="0.006 0 0.0" />
         </collision>
         <inertial>
-            <origin rpy="0 0 0" xyz="0.006 0 0.0" />
+            <origin rpy="0 0 0" xyz="-0.007 -0.002 0.018" />
             <mass value="0.1"/>
             <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
         </inertial>
@@ -140,6 +134,7 @@
         </visual>
 
         <inertial>
+            <origin rpy="0 0 0" xyz="0.002 0.011 0.043" />
             <mass value="0.1" />
             <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05" />
         </inertial>
@@ -161,6 +156,7 @@
         </visual>
 
         <inertial>
+            <origin rpy="0 0 0" xyz="0.002 0.011 0.043" />
             <mass value="0.1" />
             <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05" />
         </inertial>
@@ -292,6 +288,26 @@
       <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="wrist_2_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="gripper_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="gripper_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="gripper_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="sub_gripper_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="sub_gripper_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="sub_gripper_motor">
       <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
