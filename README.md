@@ -17,7 +17,6 @@ sudo apt-get install ros-melodic-moveit
 * catkin init
 * catkin build
 * source devel/setup.bash
-* roslaunch kuka_manipulator_description test_kr5.launch
 
 # Bring up in RVIZ and change joints
 
