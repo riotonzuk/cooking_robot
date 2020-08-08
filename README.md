@@ -12,7 +12,7 @@ sudo apt-get install ros-melodic-moveit
 * cd kuka_arm
 * mkdir src
 * cd src
-* git clone git@github.com:CesMak/kuka_arm.git
+* git clone git@github.com:lots-of-things/braccio_moveit_gazebo.git
 * cd ..
 * catkin init
 * catkin build
