@@ -29,4 +29,4 @@ sudo apt-get install ros-melodic-moveit
 roslaunch braccio_moveit_gazebo rviz_connected_with_gz_using_moveit.launch
 ```
 
-![rviz-moveit-gazebo](https://github.com/CesMak/kuka_arm/blob/master/doc/moveit.png)
+![rviz-moveit-gazebo](doc/braccio_rviz_gazebo.png)
