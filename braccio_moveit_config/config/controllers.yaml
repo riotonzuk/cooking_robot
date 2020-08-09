@@ -6,8 +6,4 @@ controller_list:
   - name: gripper_controller
     action_ns: "follow_joint_trajectory"
     type: FollowJointTrajectory
-    joints: [gripper_joint]
-  - name: sub_gripper_controller
-    action_ns: "follow_joint_trajectory"
-    type: FollowJointTrajectory
-    joints: [sub_gripper_joint]
+    joints: [gripper_joint, sub_gripper_joint]

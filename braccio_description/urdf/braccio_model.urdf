@@ -242,6 +242,12 @@
         <color rgba="0 0 0 0.50" />
     </material>
 
+  <gazebo reference="gripper_joint">
+    <implicitSpringDamper>1</implicitSpringDamper>
+  </gazebo>
+  <gazebo reference="sub_gripper_joint">
+    <implicitSpringDamper>1</implicitSpringDamper>
+  </gazebo>
   <gazebo reference="link_1">
     <mu1>1</mu1>
     <mu2>1</mu2>
@@ -273,16 +279,24 @@
     <material>Gazebo/Purple</material>
   </gazebo>
   <gazebo reference="right_gripper_link">
-    <mu1>1</mu1>
-    <mu2>1</mu2>
     <selfCollide>true</selfCollide>
     <material>Gazebo/Yellow</material>
+    <kp>1000000.0</kp>
+    <kd>1.0</kd>
+    <mu1>200.0</mu1>
+    <mu2>100.0</mu2>
+    <minDepth>0.005</minDepth>
+    <maxVel>0</maxVel>
   </gazebo>
   <gazebo reference="left_gripper_link">
-    <mu1>1</mu1>
-    <mu2>1</mu2>
     <selfCollide>true</selfCollide>
     <material>Gazebo/Yellow</material>
+    <kp>1000000.0</kp>
+    <kd>1.0</kd>
+    <mu1>200.0</mu1>
+    <mu2>100.0</mu2>
+    <minDepth>0.005</minDepth>
+    <maxVel>0</maxVel>
   </gazebo>
   <gazebo reference="base_link">
     <mu1>1</mu1>

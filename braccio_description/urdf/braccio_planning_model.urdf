@@ -171,7 +171,7 @@
 
     <joint name="joint_a1" type="revolute">
         <axis xyz="0 0 -1" />
-        <limit effort="1.0" lower="0.0" upper="3.1416" velocity="1.0" />
+        <limit effort="1000.0" lower="0.0" upper="3.1416" velocity="1.0" />
         <origin rpy="0 0 0" xyz="0 0 0" />
         <parent link="base_link" />
         <child link="link_1" />
@@ -180,7 +180,7 @@
 
     <joint name="joint_a2" type="revolute">
         <axis xyz="1 0 0" />
-        <limit effort="1.0" lower="0.2618" upper="2.8798" velocity="1.0" />
+        <limit effort="1000.0" lower="0.2618" upper="2.8798" velocity="1.0" />
         <origin rpy="-1.5708 0 0" xyz="0 -.002 0.072" />
         <parent link="link_1" />
         <child link="link_2" />
@@ -189,7 +189,7 @@
 
     <joint name="joint_a3" type="revolute">
         <axis xyz="1 0 0" />
-        <limit effort="1.0" lower="0" upper="3.1416" velocity="1.0" />
+        <limit effort="1000.0" lower="0" upper="3.1416" velocity="1.0" />
         <origin rpy="-1.5708 0 0" xyz="0 0 0.125" />
         <parent link="link_2" />
         <child link="link_3" />
@@ -198,7 +198,7 @@
 
     <joint name="joint_a4" type="revolute">
         <axis xyz="1 0 0" />
-        <limit effort="1.0" lower="0" upper="3.1416" velocity="1.0" />
+        <limit effort="1000.0" lower="0" upper="3.1416" velocity="1.0" />
         <origin rpy="-1.5708 0 0" xyz="0 0 0.125" />
         <parent link="link_3" />
         <child link="link_4" />
@@ -207,7 +207,7 @@
 
     <joint name="joint_a5" type="revolute">
         <axis xyz="0 0 -1" />
-        <limit effort="1.0" lower="0.0" upper="3.1416" velocity="1.0" />
+        <limit effort="1000.0" lower="0.0" upper="3.1416" velocity="1.0" />
         <origin rpy="0 0 1.5708" xyz="0 0.0 0.06" />
         <parent link="link_4" />
         <child link="link_5" />
@@ -216,7 +216,7 @@
 
     <joint name="gripper_joint" type="revolute">
         <axis xyz="0 -1 0" />
-        <limit effort="1.0" lower="0.1750" upper="1.2741" velocity="1.0" />
+        <limit effort="1000.0" lower="0.1750" upper="1.2741" velocity="1.0" />
         <origin rpy="0 -0.2967 0" xyz="0.010 0 0.03" />
         <parent link="link_5" />
         <child link="right_gripper_link" />
@@ -224,7 +224,7 @@
     </joint>
     <joint name="sub_gripper_joint" type="revolute">
         <axis xyz="0 1 0" />
-        <limit effort="1.0" lower="0.1750" upper="1.2741" velocity="1.0" />
+        <limit effort="1000.0" lower="0.1750" upper="1.2741" velocity="1.0" />
         <origin rpy="0 3.4383 0" xyz="-0.010 0 0.03" />
         <parent link="link_5" />
         <child link="left_gripper_link" />
@@ -244,70 +244,70 @@
   <transmission name="a1_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="joint_a1">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="shoulder_pan_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
   <transmission name="a2_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="joint_a2">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="shoulder_lift_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
   <transmission name="a3_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="joint_a3">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="elbow_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
   <transmission name="a4_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="joint_a4">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="wrist_1_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
   <transmission name="a5_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="joint_a5">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="wrist_2_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
   <transmission name="gripper_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="gripper_joint">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="gripper_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
   <transmission name="sub_gripper_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sub_gripper_joint">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="sub_gripper_motor">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>

@@ -12,6 +12,7 @@
 
   <!-- We resume the logic in empty_world.launch -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find braccio_moveit_gazebo)/worlds/test_block.world"/>
     <arg name="debug" value="$(arg debug)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="paused" value="$(arg paused)"/>
@@ -34,9 +35,18 @@
   <rosparam file="$(find braccio_moveit_gazebo)/config/arm_controller_kr5.yaml" command="load"/>
   <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn arm_controller" respawn="false" output="screen"/>
   <node name="gripper_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn gripper_controller" respawn="false" output="screen"/>
-  <node name="sub_gripper_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn sub_gripper_controller" respawn="false" output="screen"/>
 
   <!-- start moveit: -->
   <include file="$(find braccio_moveit_config)/launch/start_moveit_connected_with_gz.launch" />
+
+  <!-- <param name="box_description" textfile="$(find braccio_moveit_gazebo)/urdf/box.urdf" /> -->
+  <!-- <node name="box_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -param box_description -x 0.33 -model box"/> -->
+
+  <!-- <param name="pallet" textfile="$(find braccio_moveit_gazebo)/urdf/pallet.model" /> -->
+    <!-- <node name="spawn_pallet" pkg="gazebo_ros" type="spawn_model" args="-sdf -param pallet -model pallet1 -x 0.0 -y -0.8 -z 0.15" output="screen" /> -->
+
+  <!-- <param name="apple_description" textfile="$(find braccio_moveit_gazebo)/urdf/apple.urdf" /> -->
+  <!-- <node name="apple_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -param apple_description -x 0.25 -z 1 -model apple"/> -->
+
 
 </launch>
