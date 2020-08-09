@@ -11,8 +11,9 @@ from math import pi
 from std_msgs.msg import String, Int16MultiArray
 from sensor_msgs.msg import CompressedImage
 
-from gazebo_msgs.msg import LinkStates
+from gazebo_msgs.msg import LinkStates, ModelState
 from geometry_msgs.msg import Pose
+from gazebo_msgs.srv import SetModelState
 
 from moveit_commander.conversions import pose_to_list
 ## END_SUB_TUTORIAL
@@ -22,6 +23,8 @@ import json
 
 THETA_EXT = 0.27
 THETA_RET = np.pi/4
+
+S_FUDGE = 0.08
 
 
 class GazeboLinkPose:
@@ -63,6 +66,9 @@ class BraccioXYBBTargetInterface(object):
 
     myargv = rospy.myargv(argv=sys.argv)
     self.class_name_path = myargv[1]
+    self.sim=False
+    if len(myargv)>0 and myargv[2]=='sim':
+      self.sim = True
 
     moveit_commander.roscpp_initialize(sys.argv)
     rospy.init_node('braccio_xy_bb_target', anonymous=True)
@@ -97,6 +103,31 @@ class BraccioXYBBTargetInterface(object):
   def cal_im_callback(self, ros_data):
     self.current_image = ros_data
 
+  def reset_target_position(self):
+    state_msg = ModelState()
+    state_msg.model_name = 'unit_box_0'
+    print 'reset x='
+    tst = raw_input()
+    state_msg.pose.position.x = float(tst)
+    print 'reset y='
+    tst = raw_input()
+    state_msg.pose.position.y = float(tst)
+    print 'reset z='
+    tst = raw_input()
+    state_msg.pose.position.z = float(tst)
+    state_msg.pose.orientation.x = 0
+    state_msg.pose.orientation.y = 0
+    state_msg.pose.orientation.z = 0
+    state_msg.pose.orientation.w = 0
+
+    rospy.wait_for_service('/gazebo/set_model_state')
+    try:
+        set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+        resp = set_state( state_msg )
+
+    except rospy.ServiceException, e:
+        print "Service call failed: %s" % e
+
   def transform(self, x1, y1):
     if self.homography is not None:
       a = np.array([[x1, y1]], dtype='float32')
@@ -116,6 +147,8 @@ class BraccioXYBBTargetInterface(object):
     self.selected_class = int(tst)
 
   def bounding_box_center(self):
+    if self.sim:
+      return self.get_link_position(['unit_box_0::link'])
     if len(self.bounding_box)==0:
       return 0, 0
     ind = 0
@@ -131,8 +164,8 @@ class BraccioXYBBTargetInterface(object):
     if event == cv2.EVENT_LBUTTONDBLCLK:
       self.mouseX, self.mouseY = x,y
 
-  def wait_for_image_click(self, internal=False, which=None):
-    if internal:
+  def wait_for_image_click(self, which=None):
+    if self.sim:
       return self.get_link_position(which)
     self.mouseX, self.mouseY = None, None
     while(True):
@@ -147,11 +180,19 @@ class BraccioXYBBTargetInterface(object):
     return self.mouseX, self.mouseY
 
   def get_link_position(self, which):
-    res = self.link_locator.get_link_position(which)
-    return res.x, res.y
+    x = 0
+    y = 0
+    n = 0
+    for w in which:
+      res = self.link_locator.get_link_position(w)
+      x += res.x
+      y += res.y
+      n += 1
+    print x/n, y/n
+    return x/n, y/n
 
-  def calibrate(self, internal=False):
-    if not internal:
+  def calibrate(self):
+    if not self.sim:
       cv2.namedWindow('image')
       cv2.setMouseCallback('image',self.draw_circle)
       while len(self.current_image.data) == 0:
@@ -162,7 +203,7 @@ class BraccioXYBBTargetInterface(object):
     mouseX = None
     while not mouseX:
       print 'click on robot base.'
-      mouseX, mouseY = self.wait_for_image_click(internal,which='kuka::base_link')
+      mouseX, mouseY = self.wait_for_image_click(which=['kuka::base_link'])
     src_pts.append([mouseX,mouseY])
 
     self.gripper_middle()
@@ -180,13 +221,14 @@ class BraccioXYBBTargetInterface(object):
       theta_wrist, theta_elbow = get_other_angles(theta_shoulder)
       rand_targ = [rand_phi,theta_shoulder,theta_elbow, theta_wrist]
       self.go_to_joint(rand_targ)
-      mouseX, mouseY = self.wait_for_image_click(internal,which='kuka::left_gripper_link')
+      mouseX, mouseY = self.wait_for_image_click(which=['kuka::left_gripper_link','kuka::right_gripper_link'])
       if mouseX:
         src_pts.append([mouseX,mouseY])
         dst_angs.append(rand_targ)
     with open('calibration.json', 'w') as f:
       json.dump({'src_pts':src_pts,'dst_angs':dst_angs},f)
     self.load_calibrate()
+    self.go_to_up()
 
   def load_calibrate(self):
     with open('calibration.json', 'r') as f:
@@ -223,10 +265,8 @@ class BraccioXYBBTargetInterface(object):
     h, status = cv2.findHomography(src_pts, dst_pts)
     self.homography = h
 
-    print 'calibration done. transformed_bb:'
-    self.print_pose()
+    print 'calibration done.'
     cv2.destroyAllWindows()
-    self.go_to_up()
 
   def go_to_joint(self, joint_targets):
     joint_goal = self.move_group.get_current_joint_values()
@@ -239,7 +279,7 @@ class BraccioXYBBTargetInterface(object):
     self.move_group.stop()
 
   def gripper_close(self):
-    self.go_gripper(1.0)
+    self.go_gripper(1.2)
 
   def gripper_open(self):
     self.go_gripper(0.2)
@@ -298,7 +338,8 @@ class BraccioXYBBTargetInterface(object):
 
   def get_targets(self,x,y):
     s, phi = cart2pol(x,y)
-
+    s -= S_FUDGE
+    print s, phi
     theta_shoulder = np.arccos((s - self.l)/self.L)
     theta_wrist, theta_elbow = get_other_angles(theta_shoulder)
     return [phi, theta_shoulder, theta_elbow, theta_wrist]
@@ -308,7 +349,7 @@ class BraccioXYBBTargetInterface(object):
 
     print joint_targets
 
-    if joint_targets[1] < THETA_EXT:
+    if np.isnan(joint_targets[1]) or joint_targets[1] < THETA_EXT:
       print '++++++ Not in Domain ++++++'
       print 'theta = ' + str(joint_targets[1])
       print '+++++++++++++++++++++++++++'
@@ -386,6 +427,7 @@ class BraccioXYBBTargetInterface(object):
 def main():
   bb_targetter = BraccioXYBBTargetInterface()
 
+  bb_targetter.load_calibrate()
   while True:
       print "============ instructions: p=print, h=home, u=up, c=calibrate, l=load_calibration, t=target, s=select_target,  m=manual, q=quit"
       inp = raw_input()
@@ -395,8 +437,6 @@ def main():
           bb_targetter.print_pose()
       if inp=='c':
           bb_targetter.calibrate()
-      if inp=='i':
-          bb_targetter.calibrate(True)
       if inp=='l':
           bb_targetter.load_calibrate()
       if inp=='t':
@@ -411,6 +451,8 @@ def main():
           bb_targetter.select_target()
       if inp=='g':
           bb_targetter.go_to_manual_gripper()
+      if inp=='r':
+        bb_targetter.reset_target_position()
 
 
 if __name__ == '__main__':
