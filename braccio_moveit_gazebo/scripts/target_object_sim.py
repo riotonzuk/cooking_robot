@@ -25,6 +25,8 @@ THETA_EXT = 0.27
 THETA_RET = np.pi/4
 
 S_FUDGE = 0.08
+Q_FUDGE = 0.03
+Z_FUDGE = 0.04
 
 
 class GazeboLinkPose:
@@ -67,8 +69,12 @@ class BraccioXYBBTargetInterface(object):
     myargv = rospy.myargv(argv=sys.argv)
     self.class_name_path = myargv[1]
     self.sim=False
-    if len(myargv)>0 and myargv[2]=='sim':
+    self.classes = None
+    if myargv[1]=='sim':
       self.sim = True
+    else:
+      with open(self.class_name_path, 'r') as f:
+        self.classes = [line.strip() for line in f.readlines()]
 
     moveit_commander.roscpp_initialize(sys.argv)
     rospy.init_node('braccio_xy_bb_target', anonymous=True)
@@ -89,13 +95,10 @@ class BraccioXYBBTargetInterface(object):
     self.mouseX = 100
     self.mouseY = 100
 
-    self.classes = None
-
-    with open(self.class_name_path, 'r') as f:
-        self.classes = [line.strip() for line in f.readlines()]
-
     self.selected_class = None
     self.link_locator = GazeboLinkPose()
+
+    self.down = False
 
   def bb_callback(self, ros_data):
     self.bounding_box = ros_data.data
@@ -140,11 +143,12 @@ class BraccioXYBBTargetInterface(object):
     return self.transform(x,y)
 
   def select_target(self):
-    print 'select target'
-    for i in range(len(self.classes)):
-      print '  enter '+str(i)+' for '+str(self.classes[i])
-    tst = raw_input()
-    self.selected_class = int(tst)
+    if self.classes:
+      print 'select target'
+      for i in range(len(self.classes)):
+        print '  enter '+str(i)+' for '+str(self.classes[i])
+      tst = raw_input()
+      self.selected_class = int(tst)
 
   def bounding_box_center(self):
     if self.sim:
@@ -316,12 +320,12 @@ class BraccioXYBBTargetInterface(object):
     joint_goal[3] = 0.01
     self.go_to_joint(joint_goal)
     joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 1.9
+    joint_goal[1] = 1.6
     joint_goal[2] = 0.01
     joint_goal[3] = 0.01
     self.go_to_joint(joint_goal)
     joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 0.4
+    joint_goal[1] = 0.3
     joint_goal[2] = 1.8
     joint_goal[3] = 0.1
     self.go_to_joint(joint_goal)
@@ -342,23 +346,57 @@ class BraccioXYBBTargetInterface(object):
     print s, phi
     theta_shoulder = np.arccos((s - self.l)/self.L)
     theta_wrist, theta_elbow = get_other_angles(theta_shoulder)
+    dd = self.L*np.cos(theta_shoulder)
+    print 'dd = '+str(dd)
+    theta_diff = 2*np.arctan(Z_FUDGE/2/dd)
+    print 'theta_diff = '+str(theta_diff)
+    theta_shoulder_true = theta_shoulder - theta_diff
+    theta_wrist_true = theta_wrist + theta_diff
+    return [phi, theta_shoulder_true, theta_elbow, theta_wrist_true]
+
+  def get_down_targets(self,x,y):
+    s, phi = cart2pol(x,y)
+    print s, phi
+    print self.l
+    q = self.l + Q_FUDGE
+    p = np.sqrt(s**2+q**2)
+    theta_1 = np.arctan(q/s)
+    theta_2 =np.arccos(p/self.L)
+
+    print 'l = ' + str(self.l)
+    print 'L = ' + str(self.L)
+    theta_shoulder = theta_1+theta_2
+    print 'theta_shoulder_1 ' + str(theta_1)
+    print 'theta_shoulder_2 ' + str(theta_2)
+    theta_elbow_true = 2*np.arcsin(p/self.L)
+    print 'theta_elbow ' + str(theta_elbow_true)
+    theta_elbow = theta_elbow_true - np.pi/2
+    theta_wrist_true = 3*np.pi/2 - theta_shoulder - theta_elbow_true
+    theta_wrist = theta_wrist_true - np.pi/2
     return [phi, theta_shoulder, theta_elbow, theta_wrist]
 
   def go_to_xy(self, x, y):
-    joint_targets = self.get_targets(x,y)
-
-    print joint_targets
-
-    if np.isnan(joint_targets[1]) or joint_targets[1] < THETA_EXT:
-      print '++++++ Not in Domain ++++++'
-      print 'theta = ' + str(joint_targets[1])
-      print '+++++++++++++++++++++++++++'
-      return
-    if joint_targets[1] > THETA_RET:
-      print '++++++ Too close, pushing backwards +++++'
-      print 'theta = ' + str(joint_targets[1])
-      self.go_to_push(joint_targets[0])
-      return
+    if self.down:
+      joint_targets = self.get_down_targets(x,y)
+      print joint_targets
+      if joint_targets[1] < THETA_EXT or joint_targets[2] < 0 or joint_targets[3] < 0:
+        print '++++++ Not in Domain ++++++'
+        print 'theta = ' + str(joint_targets[1])
+        print '+++++++++++++++++++++++++++'
+        return
+    else:
+      joint_targets = self.get_targets(x,y)
+      print joint_targets
+      if np.isnan(joint_targets[1]) or joint_targets[1] < THETA_EXT:
+        print '++++++ Not in Domain ++++++'
+        print 'theta = ' + str(joint_targets[1])
+        print '+++++++++++++++++++++++++++'
+        return
+      if joint_targets[1] > THETA_RET or joint_targets[2] < 0 or joint_targets[3] < 0:
+        print '++++++ Too close, pushing backwards +++++'
+        print 'theta = ' + str(joint_targets[1])
+        self.go_to_push(joint_targets[0])
+        return
 
     self.go_to_raise()
     self.gripper_open()
@@ -374,6 +412,14 @@ class BraccioXYBBTargetInterface(object):
     self.gripper_close()
     self.go_to_home()
 
+  def go_to_manual_joint(self):
+    joint_goal = self.move_group.get_current_joint_values()
+    for i in range(len(joint_goal)):
+      print 'joint' + str(i) + ' ' + str(joint_goal[i])
+      tst = raw_input()
+      if tst!='':
+          joint_goal[i] = float(tst)
+    self.go_to_joint(joint_goal)
 
   def go_to_manual(self):
     print 'pos x?'
@@ -429,7 +475,7 @@ def main():
 
   bb_targetter.load_calibrate()
   while True:
-      print "============ instructions: p=print, h=home, u=up, c=calibrate, l=load_calibration, t=target, s=select_target,  m=manual, q=quit"
+      print "============ instructions: p=print, h=home, u=up, c=calibrate, l=load_calibration, t=target, s=select_target, r=reset_target, m=manual, q=quit"
       inp = raw_input()
       if inp=='q':
           break
@@ -450,9 +496,19 @@ def main():
       if inp=='s':
           bb_targetter.select_target()
       if inp=='g':
-          bb_targetter.go_to_manual_gripper()
+          bb_targetter.go_to_manual()
       if inp=='r':
         bb_targetter.reset_target_position()
+      if inp=='j':
+        bb_targetter.go_to_manual_joint()
+      if inp=='d':
+        bb_targetter.down=True
+        bb_targetter.go_to_target()
+        bb_targetter.down=False
+      if inp=='n':
+        bb_targetter.down=True
+        bb_targetter.go_to_manual()
+        bb_targetter.down=False
 
 
 if __name__ == '__main__':
