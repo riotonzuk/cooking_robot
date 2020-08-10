@@ -283,8 +283,8 @@
     <material>Gazebo/Yellow</material>
     <kp>1000000.0</kp>
     <kd>1.0</kd>
-    <mu1>200.0</mu1>
-    <mu2>100.0</mu2>
+    <mu1>500.0</mu1>
+    <mu2>200.0</mu2>
     <minDepth>0.005</minDepth>
     <maxVel>0</maxVel>
   </gazebo>
@@ -293,8 +293,8 @@
     <material>Gazebo/Yellow</material>
     <kp>1000000.0</kp>
     <kd>1.0</kd>
-    <mu1>200.0</mu1>
-    <mu2>100.0</mu2>
+    <mu1>500.0</mu1>
+    <mu2>200.0</mu2>
     <minDepth>0.005</minDepth>
     <maxVel>0</maxVel>
   </gazebo>

@@ -12,7 +12,7 @@
 
   <!-- We resume the logic in empty_world.launch -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find braccio_moveit_gazebo)/worlds/test_ground.world"/>
+    <arg name="world_name" value="$(find braccio_moveit_gazebo)/worlds/test_ramp_bowl.world"/>
     <arg name="debug" value="$(arg debug)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="paused" value="$(arg paused)"/>

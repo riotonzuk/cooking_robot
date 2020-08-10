@@ -86,10 +86,10 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>757 645000000</sim_time>
-      <real_time>33 153946462</real_time>
-      <wall_time>1596959037 274822690</wall_time>
-      <iterations>32684</iterations>
+      <sim_time>73 444000000</sim_time>
+      <real_time>77 971155728</real_time>
+      <wall_time>1597090079 402804166</wall_time>
+      <iterations>73444</iterations>
       <model name='ground_plane'>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -100,14 +100,24 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='unit_box_0'>
-        <pose frame=''>0.363757 0.001726 0.025 -2e-06 1e-06 0.000662</pose>
-        <scale>1 1 1</scale>
+      <model name='unit_box'>
+        <pose frame=''>-0.00656 -0.357416 0.054729 0 -0.349922 0</pose>
+        <scale>0.110022 0.204638 0.009881</scale>
         <link name='link'>
-          <pose frame=''>0.363757 0.001726 0.025 -2e-06 1e-06 0.000662</pose>
-          <velocity>2.8e-05 2.6e-05 -3.8e-05 -0.001042 0.001139 1e-06</velocity>
+          <pose frame=''>-0.00656 -0.357416 0.054729 0 -0.349922 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='unit_box_0'>
+        <pose frame=''>0.363757 0.001726 0.023 0 -0 0.000662</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose frame=''>0.363757 0.001726 0.023 0 -0 0.000662</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>-7.9e-05 -4e-06 -2.5e-05 0.000145 -0.003151 -1e-06</acceleration>
+          <wrench>-1e-06 -0 -0 0 -0 0</wrench>
         </link>
       </model>
       <light name='sun'>
@@ -116,7 +126,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose frame=''>-0.360869 1.81325 1.49045 0 0.73964 -1.32698</pose>
+        <pose frame=''>0.046938 2.27855 0.394565 0 0.14364 -1.68297</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -148,6 +158,9 @@
                 <mu>200</mu>
                 <mu2>100</mu2>
               </ode>
+              <torsional>
+                <ode/>
+              </torsional>
             </friction>
             <contact>
               <ode>
@@ -155,6 +168,7 @@
                 <kp>100000</kp>
               </ode>
             </contact>
+            <bounce/>
           </surface>
         </collision>
         <visual name='visual'>
@@ -173,8 +187,62 @@
         <self_collide>0</self_collide>
         <enable_wind>0</enable_wind>
         <velocity_decay>
-          <angular>0.00001</angular>
+          <angular>1e-05</angular>
         </velocity_decay>
+        <kinematic>0</kinematic>
+      </link>
+    </model>
+    <model name='unit_box'>
+      <static>1</static>
+      <pose frame=''>0.038208 -0.818029 0.5 0 -0 0</pose>
+      <link name='link'>
+        <inertial>
+          <mass>1</mass>
+          <inertia>
+            <ixx>0.166667</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.166667</iyy>
+            <iyz>0</iyz>
+            <izz>0.166667</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>1 0.999999 1</size>
+            </box>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>1 0.999999 1</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Grey</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
       </link>
     </model>
   </world>

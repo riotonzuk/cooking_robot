@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <sdf version='1.6'>
   <world name='default'>
     <light name='sun' type='directional'>
@@ -86,10 +87,10 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>757 645000000</sim_time>
-      <real_time>33 153946462</real_time>
-      <wall_time>1596959037 274822690</wall_time>
-      <iterations>32684</iterations>
+      <sim_time>110 533000000</sim_time>
+      <real_time>37 305464576</real_time>
+      <wall_time>1597093365 280403900</wall_time>
+      <iterations>37089</iterations>
       <model name='ground_plane'>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -100,12 +101,11 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='unit_box_0'>
-        <pose frame=''>0.363757 0.001726 0.025 -2e-06 1e-06 0.000662</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose frame=''>0.363757 0.001726 0.025 -2e-06 1e-06 0.000662</pose>
-          <velocity>2.8e-05 2.6e-05 -3.8e-05 -0.001042 0.001139 1e-06</velocity>
+      <model name='my_mesh'>
+        <pose frame=''>-0.15 -0.3 0 0 -0 0</pose>
+        <link name='body'>
+          <pose frame=''>-0.15 -0.3 0 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
@@ -116,30 +116,42 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose frame=''>-0.360869 1.81325 1.49045 0 0.73964 -1.32698</pose>
+        <pose frame=''>-0.052609 0.438088 0.043922 -0 0.23564 -1.84297</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
-    <model name='unit_box_0'>
-      <pose frame=''>0.430819 2.189 0.5 0 -0 0</pose>
-      <link name='link'>
+    <model name='my_mesh'>
+      <link name='body'>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>file:///home/stedn/projects/braccio_moveit_gazebo_ws/src/braccio_moveit_gazebo/braccio_moveit_gazebo/worlds/bowl.dae</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Blue</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+          </material>
+        </visual>
         <inertial>
-          <mass>0.01</mass>
+          <mass>0.1</mass>
           <inertia>
-            <ixx>0.0166667</ixx>
+            <ixx>0.01</ixx>
             <ixy>0</ixy>
             <ixz>0</ixz>
-            <iyy>0.0166667</iyy>
+            <iyy>0.01</iyy>
             <iyz>0</iyz>
-            <izz>0.0166667</izz>
+            <izz>0.02</izz>
           </inertia>
         </inertial>
         <collision name='collision'>
           <geometry>
-            <box>
-              <size>0.04 0.04 0.05</size>
-            </box>
+            <mesh>
+              <uri>file:///home/stedn/projects/braccio_moveit_gazebo_ws/src/braccio_moveit_gazebo/braccio_moveit_gazebo/worlds/bowl.dae</uri>
+            </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
           <surface>
@@ -148,6 +160,9 @@
                 <mu>200</mu>
                 <mu2>100</mu2>
               </ode>
+              <torsional>
+                <ode/>
+              </torsional>
             </friction>
             <contact>
               <ode>
@@ -155,26 +170,12 @@
                 <kp>100000</kp>
               </ode>
             </contact>
+            <bounce/>
           </surface>
         </collision>
-        <visual name='visual'>
-          <geometry>
-            <box>
-              <size>0.04 0.04 0.05</size>
-            </box>
-          </geometry>
-          <material>
-            <script>
-              <name>Gazebo/Red</name>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-            </script>
-          </material>
-        </visual>
         <self_collide>0</self_collide>
         <enable_wind>0</enable_wind>
-        <velocity_decay>
-          <angular>0.00001</angular>
-        </velocity_decay>
+        <kinematic>0</kinematic>
       </link>
     </model>
   </world>

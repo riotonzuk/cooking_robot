@@ -560,6 +560,36 @@ class BraccioXYBBTargetInterface(object):
     joint_goal[0] = 3.14
     self.go_to_joint(joint_goal)
     self.gripper_open()
+    self.gripper_open()
+
+  def go_to_bowl(self):
+    self.go_to_raise()
+    self.gripper_open()
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 2.7
+    joint_goal[2] = 0.01
+    joint_goal[3] = 0.01
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 1.6
+    joint_goal[2] = 0.01
+    joint_goal[3] = 0.01
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 0.3
+    joint_goal[2] = 1.8
+    joint_goal[3] = 0.1
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 2.1
+    joint_goal[2] = 0.01
+    joint_goal[3] = 0.01
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 2.7
+    joint_goal[2] = 0.01
+    joint_goal[3] = 0.01
+    self.go_to_joint(joint_goal)
 
   def go_to_up(self):
     self.go_to_raise()
@@ -606,6 +636,10 @@ def main():
           bb_targetter.select_target()
       if inp=='r':
           bb_targetter.reset_target_position()
+      if inp=='g':
+          bb_targetter.go_to_manual_gripper()
+      if inp=='b':
+          bb_targetter.go_to_bowl()
 
 
 if __name__ == '__main__':
