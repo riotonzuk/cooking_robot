@@ -35,7 +35,9 @@ Z_MIN = -0.045
 CLOSE_ENOUGH = 0.02
 
 class Arm3Link:
-
+  """
+  credit: https://github.com/studywolf/blog/tree/master/InvKin
+  """
     def __init__(self, L=None):
         # initial joint angles
         self.q = [0, 0, 0]
