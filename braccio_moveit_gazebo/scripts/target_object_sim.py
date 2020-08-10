@@ -29,15 +29,20 @@ L_FUDGE = 0.08
 Q_FUDGE = 0.0325
 Z_FUDGE = 0.04
 
-Z_MAX = 0
+
+Z_MAX_SIDE = -0.03
+Z_MAX_DOWN = 0
 Z_MIN = -0.045
 
 CLOSE_ENOUGH = 0.02
+DEFAULT_ROT = 0
+
+S_MAX = 0.4
 
 class Arm3Link:
-  """
-  credit: https://github.com/studywolf/blog/tree/master/InvKin
-  """
+    """
+    credit: https://github.com/studywolf/blog/tree/master/InvKin
+    """
     def __init__(self, L=None):
         # initial joint angles
         self.q = [0, 0, 0]
@@ -211,16 +216,17 @@ class BraccioXYBBTargetInterface(object):
     except rospy.ServiceException, e:
         print "Service call failed: %s" % e
 
-  def transform(self, x1, y1):
+  def transform(self, x1, y1, r):
     if self.homography is not None:
       a = np.array([[x1, y1]], dtype='float32')
-      return cv2.perspectiveTransform(a[None, :, :], self.homography)[0][0]
+      res = cv2.perspectiveTransform(a[None, :, :], self.homography)[0][0]
+      return float(res[0]), float(res[1]), DEFAULT_ROT
     else:
       raise ValueError('run or load calibration first!')
 
   def transform_bb(self):
-    x, y = self.bounding_box_center()
-    return self.transform(x,y)
+    x, y, r = self.bounding_box_center()
+    return self.transform(x,y,r)
 
   def select_target(self):
     if self.classes:
@@ -234,7 +240,7 @@ class BraccioXYBBTargetInterface(object):
     if self.sim:
       return self.get_link_position(['unit_box_0::link'])
     if len(self.bounding_box)==0:
-      return 0, 0
+      return 0, 0, 0
     ind = 0
     if self.selected_class:
       for i in range(len(self.bounding_box)/5):
@@ -242,7 +248,7 @@ class BraccioXYBBTargetInterface(object):
           ind = i*5
     x = self.bounding_box[ind*5 + 1]
     y = self.bounding_box[ind*5 + 2]
-    return x, y
+    return x, y, DEFAULT_ROT
 
   def draw_circle(self,event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDBLCLK:
@@ -273,7 +279,7 @@ class BraccioXYBBTargetInterface(object):
       y += res.y
       n += 1
     print x/n, y/n
-    return x/n, y/n
+    return x/n, y/n, DEFAULT_ROT
 
   def calibrate(self):
     if not self.sim:
@@ -455,61 +461,51 @@ class BraccioXYBBTargetInterface(object):
 
   def get_targets(self,x,y):
     s, phi = cart2pol(x,y)
-    q = self.kinematics.inv_kin(s, Z_MIN, Z_MIN/2, 0)
+    q = self.kinematics.inv_kin(s, Z_MIN, Z_MAX_SIDE, 0)
     xy = self.kinematics.get_xy(q)
     if np.abs(xy[0]-s) > CLOSE_ENOUGH:
       print 'NO SOLUTION FOUND'
       print 'real= '+str(xy[0]) + ' goal='+str(s)
-      return [phi, np.NaN, np.NaN, np.NaN]
-    return [phi, q[0], q[1]+np.pi/2, q[2]+np.pi/2]
-    # print s, phi
-    # theta_shoulder = np.arccos((s - self.l)/self.L)
-    # theta_wrist, theta_elbow = get_other_angles(theta_shoulder)
-    # dd = self.L*np.cos(theta_shoulder)
-    # print 'dd = '+str(dd)
-    # theta_diff = 2*np.arctan(Z_FUDGE/2/dd)
-    # print 'theta_diff = '+str(theta_diff)
-    # theta_shoulder_true = theta_shoulder - theta_diff
-    # theta_wrist_true = theta_wrist + theta_diff
-    # return [phi, theta_shoulder_true, theta_elbow, theta_wrist_true]
+      return s, [phi, np.NaN, np.NaN, np.NaN]
+    return s, [phi, q[0], q[1]+np.pi/2, q[2]+np.pi/2]
 
   def get_down_targets(self,x,y):
     s, phi = cart2pol(x,y)
     print s, phi
-    q = self.kinematics.inv_kin(s, Z_MIN, Z_MAX, -np.pi/2)
+    q = self.kinematics.inv_kin(s, Z_MIN, Z_MAX_DOWN, -np.pi/2)
     xy = self.kinematics.get_xy(q)
     if np.abs(xy[0]-s) > CLOSE_ENOUGH:
       print 'NO SOLUTION FOUND'
       print 'real= '+str(xy[0]) + ' goal='+str(s)
-      return [phi, np.NaN, np.NaN, np.NaN]
-    return [phi, q[0], q[1]+np.pi/2, q[2]+np.pi/2]
+      return s, [phi, np.NaN, np.NaN, np.NaN]
+    return s, [phi, q[0], q[1]+np.pi/2, q[2]+np.pi/2]
 
-  def go_to_xy(self, x, y):
-    if self.down:
-      joint_targets = self.get_down_targets(x,y)
+  def go_to_xy(self, x, y, r, how):
+    if how=='down':
+      s, joint_targets = self.get_down_targets(x,y)
       print joint_targets
-      if np.isnan(joint_targets[1]) or joint_targets[2] < 0:
-        print '++++++ Not in Domain ++++++'
-        print 'theta = ' + str(joint_targets[1])
-        print '+++++++++++++++++++++++++++'
-        return
-      if joint_targets[1] < THETA_EXT or joint_targets[3] < 0:
+      if np.isnan(joint_targets[1]) and s < S_MAX:
         print '++++++ Too far out, pulling backwards +++++'
         print 'theta = ' + str(joint_targets[1])
         self.go_to_pull(joint_targets[0])
         return
-    else:
-      joint_targets = self.get_targets(x,y)
-      print joint_targets
-      if np.isnan(joint_targets[1]) or joint_targets[1] < THETA_EXT:
+      if np.isnan(joint_targets[1]):
         print '++++++ Not in Domain ++++++'
         print 'theta = ' + str(joint_targets[1])
         print '+++++++++++++++++++++++++++'
         return
-      if joint_targets[2] < 0 or joint_targets[3] < 0:
+    elif how=='side':
+      s, joint_targets = self.get_targets(x,y)
+      print joint_targets
+      if np.isnan(joint_targets[1]) and s < S_MAX:
         print '++++++ Too close, pushing backwards +++++'
         print 'theta = ' + str(joint_targets[1])
         self.go_to_push(joint_targets[0])
+        return
+      if np.isnan(joint_targets[1]):
+        print '++++++ Not in Domain ++++++'
+        print 'theta = ' + str(joint_targets[1])
+        print '+++++++++++++++++++++++++++'
         return
 
     self.go_to_raise()
@@ -535,7 +531,7 @@ class BraccioXYBBTargetInterface(object):
           joint_goal[i] = float(tst)
     self.go_to_joint(joint_goal)
 
-  def go_to_manual(self):
+  def go_to_manual(self, how):
     print 'pos x?'
     tst = raw_input()
     if tst!='':
@@ -544,24 +540,21 @@ class BraccioXYBBTargetInterface(object):
     tst = raw_input()
     if tst!='':
         y = float(tst)
-
-    self.go_to_xy(x, y)
+    self.go_to_xy(x, y, DEFAULT_ROT, how)
 
   def go_to_manual_gripper(self):
     print 'grip position?'
     tst = raw_input()
     if tst!='':
         v = float(tst)
-
     self.go_gripper(v)
 
-  def go_to_target(self):
-    v = self.transform_bb()
-    print v
-    self.go_to_xy(v[0], v[1])
+  def go_to_target(self, how):
+    x,y,r = self.transform_bb()
+    print x, y, r
+    self.go_to_xy(x, y, r, how)
 
   def go_to_home(self):
-
     self.go_to_raise()
     joint_goal = self.move_group.get_current_joint_values()
     joint_goal[0] = 3.14
@@ -570,13 +563,11 @@ class BraccioXYBBTargetInterface(object):
 
   def go_to_up(self):
     self.go_to_raise()
-
     joint_goal = self.move_group.get_current_joint_values()
     joint_goal[0] = 1.5708
     joint_goal[1] = 1.5708
     joint_goal[2] = 1.5708
     joint_goal[3] = 1.5708
-
     self.go_to_joint(joint_goal)
 
   def print_pose(self):
@@ -600,9 +591,13 @@ def main():
       if inp=='l':
           bb_targetter.load_calibrate()
       if inp=='t':
-          bb_targetter.go_to_target()
+          bb_targetter.go_to_target('side')
+      if inp=='d':
+          bb_targetter.go_to_target('down')
       if inp=='m':
-          bb_targetter.go_to_manual()
+          bb_targetter.go_to_manual('side')
+      if inp=='n':
+          bb_targetter.go_to_manual('down')
       if inp=='h':
           bb_targetter.go_to_home()
       if inp=='u':
@@ -610,17 +605,7 @@ def main():
       if inp=='s':
           bb_targetter.select_target()
       if inp=='r':
-        bb_targetter.reset_target_position()
-      if inp=='j':
-        bb_targetter.go_to_manual_joint()
-      if inp=='d':
-        bb_targetter.down=True
-        bb_targetter.go_to_target()
-        bb_targetter.down=False
-      if inp=='n':
-        bb_targetter.down=True
-        bb_targetter.go_to_manual()
-        bb_targetter.down=False
+          bb_targetter.reset_target_position()
 
 
 if __name__ == '__main__':
