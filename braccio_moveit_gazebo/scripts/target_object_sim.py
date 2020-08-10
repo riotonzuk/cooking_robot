@@ -18,16 +18,93 @@ from gazebo_msgs.srv import SetModelState
 from moveit_commander.conversions import pose_to_list
 ## END_SUB_TUTORIAL
 import numpy as np
+import scipy.optimize
 import cv2
 import json
 
 THETA_EXT = 0.27
 THETA_RET = np.pi/4
 
-S_FUDGE = 0.08
-Q_FUDGE = 0.03
+L_FUDGE = 0.08
+Q_FUDGE = 0.0325
 Z_FUDGE = 0.04
 
+Z_MAX = 0
+Z_MIN = -0.045
+
+CLOSE_ENOUGH = 0.02
+
+class Arm3Link:
+
+    def __init__(self, L=None):
+        # initial joint angles
+        self.q = [0, 0, 0]
+        # some default arm positions
+        self.L = np.array([1, 1, 0.8]) if L is None else L
+        self.max_y = 1
+        self.min_y = 0
+
+        self.end_angle_tol = 0.05
+        self.end_angle = -np.pi/2
+        self.max_angles = [1.6, np.pi/2, np.pi/2]
+        self.min_angles = [0.27, -np.pi/2, -np.pi/2]
+
+    def get_xy(self, q=None):
+        if q is None:
+            q = self.q
+
+        x = self.L[0]*np.cos(q[0]) + \
+            self.L[1]*np.cos(q[0]+q[1]) + \
+            self.L[2]*np.cos(np.sum(q))
+
+        y = self.L[0]*np.sin(q[0]) + \
+            self.L[1]*np.sin(q[0]+q[1]) + \
+            self.L[2]*np.sin(np.sum(q))
+
+        return [x, y]
+
+    def inv_kin(self, x, min_y, max_y, end_angle):
+
+        def distance_to_default(q, x):
+            x = (self.L[0]*np.cos(q[0]) + self.L[1]*np.cos(q[0]+q[1]) +
+                 self.L[2]*np.cos(np.sum(q))) - x
+            return x**2
+
+        def y_upper_constraint(q, *args):
+            y = (self.L[0]*np.sin(q[0]) + self.L[1]*np.sin(q[0]+q[1]) +
+                 self.L[2]*np.sin(np.sum(q)))
+            return self.max_y - y
+
+        def y_lower_constraint(q, *args):
+            y = (self.L[0]*np.sin(q[0]) + self.L[1]*np.sin(q[0]+q[1]) +
+                 self.L[2]*np.sin(np.sum(q)))
+            return y - self.min_y
+
+        def joint_limits_upper_constraint(q, *args):
+            return self.max_angles - q
+
+        def joint_limits_lower_constraint(q, *args):
+            return q - self.min_angles
+
+        def joint_limits_last_orientation(q, *args):
+            return self.end_angle_tol - np.abs(np.sum(q)-self.end_angle)
+
+        self.min_y = min_y
+        self.max_y = max_y
+        if end_angle is not None:
+            self.end_angle = end_angle
+        q = scipy.optimize.fmin_slsqp(
+            func=distance_to_default,
+            x0=self.q,
+            # uncomment to add in min / max angles for the joints
+            ieqcons=[joint_limits_last_orientation,
+                     joint_limits_upper_constraint,
+                     joint_limits_lower_constraint,
+                     y_upper_constraint,
+                     y_lower_constraint],
+            args=(x,))  # iprint=0 suppresses output
+        self.q = q
+        return self.q
 
 class GazeboLinkPose:
   link_name = ''
@@ -99,6 +176,7 @@ class BraccioXYBBTargetInterface(object):
     self.link_locator = GazeboLinkPose()
 
     self.down = False
+    self.kinematics = Arm3Link()
 
   def bb_callback(self, ros_data):
     self.bounding_box = ros_data.data
@@ -269,6 +347,7 @@ class BraccioXYBBTargetInterface(object):
     h, status = cv2.findHomography(src_pts, dst_pts)
     self.homography = h
 
+    self.kinematics = Arm3Link(L=[self.L/2,self.L/2,self.l+L_FUDGE])
     print 'calibration done.'
     cv2.destroyAllWindows()
 
@@ -295,7 +374,6 @@ class BraccioXYBBTargetInterface(object):
     joint_goal = self.gripper_group.get_current_joint_values()
     joint_goal[0] = val
     joint_goal[1] = val
-    print joint_goal
     self.gripper_group.go(joint_goal, wait=True)
     self.gripper_group.stop()
 
@@ -305,6 +383,39 @@ class BraccioXYBBTargetInterface(object):
     joint_goal[1] = 1.15
     joint_goal[2] = 0.13
     joint_goal[3] = 2.29
+    self.go_to_joint(joint_goal)
+
+  def go_to_pull(self, phi):
+    self.go_to_raise()
+    self.gripper_close()
+    if phi:
+      joint_goal = self.move_group.get_current_joint_values()
+      joint_goal[0] = float(phi)
+      self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 0.3
+    joint_goal[2] = 1.8
+    joint_goal[3] = 1.8
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 0.3
+    joint_goal[2] = 1.8
+    joint_goal[3] = 0.1
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 1.2
+    joint_goal[2] = 0.4
+    joint_goal[3] = 0.2
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 0.3
+    joint_goal[2] = 1.8
+    joint_goal[3] = 0.1
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 0.3
+    joint_goal[2] = 1.8
+    joint_goal[3] = 1.8
     self.go_to_joint(joint_goal)
 
   def go_to_push(self, phi):
@@ -342,47 +453,48 @@ class BraccioXYBBTargetInterface(object):
 
   def get_targets(self,x,y):
     s, phi = cart2pol(x,y)
-    s -= S_FUDGE
-    print s, phi
-    theta_shoulder = np.arccos((s - self.l)/self.L)
-    theta_wrist, theta_elbow = get_other_angles(theta_shoulder)
-    dd = self.L*np.cos(theta_shoulder)
-    print 'dd = '+str(dd)
-    theta_diff = 2*np.arctan(Z_FUDGE/2/dd)
-    print 'theta_diff = '+str(theta_diff)
-    theta_shoulder_true = theta_shoulder - theta_diff
-    theta_wrist_true = theta_wrist + theta_diff
-    return [phi, theta_shoulder_true, theta_elbow, theta_wrist_true]
+    q = self.kinematics.inv_kin(s, Z_MIN, Z_MIN/2, 0)
+    xy = self.kinematics.get_xy(q)
+    if np.abs(xy[0]-s) > CLOSE_ENOUGH:
+      print 'NO SOLUTION FOUND'
+      print 'real= '+str(xy[0]) + ' goal='+str(s)
+      return [phi, np.NaN, np.NaN, np.NaN]
+    return [phi, q[0], q[1]+np.pi/2, q[2]+np.pi/2]
+    # print s, phi
+    # theta_shoulder = np.arccos((s - self.l)/self.L)
+    # theta_wrist, theta_elbow = get_other_angles(theta_shoulder)
+    # dd = self.L*np.cos(theta_shoulder)
+    # print 'dd = '+str(dd)
+    # theta_diff = 2*np.arctan(Z_FUDGE/2/dd)
+    # print 'theta_diff = '+str(theta_diff)
+    # theta_shoulder_true = theta_shoulder - theta_diff
+    # theta_wrist_true = theta_wrist + theta_diff
+    # return [phi, theta_shoulder_true, theta_elbow, theta_wrist_true]
 
   def get_down_targets(self,x,y):
     s, phi = cart2pol(x,y)
     print s, phi
-    print self.l
-    q = self.l + Q_FUDGE
-    p = np.sqrt(s**2+q**2)
-    theta_1 = np.arctan(q/s)
-    theta_2 =np.arccos(p/self.L)
-
-    print 'l = ' + str(self.l)
-    print 'L = ' + str(self.L)
-    theta_shoulder = theta_1+theta_2
-    print 'theta_shoulder_1 ' + str(theta_1)
-    print 'theta_shoulder_2 ' + str(theta_2)
-    theta_elbow_true = 2*np.arcsin(p/self.L)
-    print 'theta_elbow ' + str(theta_elbow_true)
-    theta_elbow = theta_elbow_true - np.pi/2
-    theta_wrist_true = 3*np.pi/2 - theta_shoulder - theta_elbow_true
-    theta_wrist = theta_wrist_true - np.pi/2
-    return [phi, theta_shoulder, theta_elbow, theta_wrist]
+    q = self.kinematics.inv_kin(s, Z_MIN, Z_MAX, -np.pi/2)
+    xy = self.kinematics.get_xy(q)
+    if np.abs(xy[0]-s) > CLOSE_ENOUGH:
+      print 'NO SOLUTION FOUND'
+      print 'real= '+str(xy[0]) + ' goal='+str(s)
+      return [phi, np.NaN, np.NaN, np.NaN]
+    return [phi, q[0], q[1]+np.pi/2, q[2]+np.pi/2]
 
   def go_to_xy(self, x, y):
     if self.down:
       joint_targets = self.get_down_targets(x,y)
       print joint_targets
-      if joint_targets[1] < THETA_EXT or joint_targets[2] < 0 or joint_targets[3] < 0:
+      if np.isnan(joint_targets[1]) or joint_targets[2] < 0:
         print '++++++ Not in Domain ++++++'
         print 'theta = ' + str(joint_targets[1])
         print '+++++++++++++++++++++++++++'
+        return
+      if joint_targets[1] < THETA_EXT or joint_targets[3] < 0:
+        print '++++++ Too far out, pulling backwards +++++'
+        print 'theta = ' + str(joint_targets[1])
+        self.go_to_pull(joint_targets[0])
         return
     else:
       joint_targets = self.get_targets(x,y)
@@ -392,7 +504,7 @@ class BraccioXYBBTargetInterface(object):
         print 'theta = ' + str(joint_targets[1])
         print '+++++++++++++++++++++++++++'
         return
-      if joint_targets[1] > THETA_RET or joint_targets[2] < 0 or joint_targets[3] < 0:
+      if joint_targets[2] < 0 or joint_targets[3] < 0:
         print '++++++ Too close, pushing backwards +++++'
         print 'theta = ' + str(joint_targets[1])
         self.go_to_push(joint_targets[0])
@@ -495,8 +607,6 @@ def main():
           bb_targetter.go_to_up()
       if inp=='s':
           bb_targetter.select_target()
-      if inp=='g':
-          bb_targetter.go_to_manual()
       if inp=='r':
         bb_targetter.reset_target_position()
       if inp=='j':
