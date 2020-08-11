@@ -216,6 +216,25 @@ class BraccioXYBBTargetInterface(object):
     except rospy.ServiceException, e:
         print "Service call failed: %s" % e
 
+  def reset_bowl(self):
+    state_msg = ModelState()
+    state_msg.model_name = 'my_mesh'
+    state_msg.pose.position.x = -0.15
+    state_msg.pose.position.y = -0.325
+    state_msg.pose.position.z = 0
+    state_msg.pose.orientation.x = 0
+    state_msg.pose.orientation.y = 0
+    state_msg.pose.orientation.z = 0
+    state_msg.pose.orientation.w = 0
+
+    rospy.wait_for_service('/gazebo/set_model_state')
+    try:
+        set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+        resp = set_state( state_msg )
+
+    except rospy.ServiceException, e:
+        print "Service call failed: %s" % e
+
   def transform(self, x1, y1, r):
     if self.homography is not None:
       a = np.array([[x1, y1]], dtype='float32')
@@ -366,7 +385,7 @@ class BraccioXYBBTargetInterface(object):
     joint_goal[2] = joint_targets[2]
     joint_goal[3] = joint_targets[3]
     joint_goal[4] = 1.5708
-    self.move_group.go(joint_goal, wait=True)
+    ret = self.move_group.go(joint_goal, wait=True)
     self.move_group.stop()
 
   def gripper_close(self):
@@ -376,7 +395,7 @@ class BraccioXYBBTargetInterface(object):
     self.go_gripper(0.2)
 
   def gripper_middle(self):
-    self.go_gripper(0.9)
+    self.go_gripper(0.6)
 
   def go_gripper(self, val):
     joint_goal = self.gripper_group.get_current_joint_values()
@@ -563,36 +582,56 @@ class BraccioXYBBTargetInterface(object):
     self.gripper_open()
 
   def go_to_bowl(self):
-    self.go_to_raise()
+    self.go_to_up()
     self.gripper_open()
     joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 2.7
-    joint_goal[2] = 0.01
-    joint_goal[3] = 0.01
+    joint_goal[0] = 0.45
+    joint_goal[1] = 1.57
+    joint_goal[2] = 3.14
+    joint_goal[3] = 3.14
     self.go_to_joint(joint_goal)
     joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 1.6
-    joint_goal[2] = 0.01
-    joint_goal[3] = 0.01
+    joint_goal[1] = 2.76
+    joint_goal[2] = 2.82
+    joint_goal[3] = 0.76
+    self.go_to_joint(joint_goal)
+    self.gripper_middle()
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 2.87
+    joint_goal[2] = 2.52
+    joint_goal[3] = 0.83
     self.go_to_joint(joint_goal)
     joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 0.3
-    joint_goal[2] = 1.8
-    joint_goal[3] = 0.1
+    joint_goal[1] = 2.5
+    joint_goal[2] = 3.01
+    joint_goal[3] = 0.83
     self.go_to_joint(joint_goal)
     joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 2.1
-    joint_goal[2] = 0.01
-    joint_goal[3] = 0.01
+    joint_goal[0] = 0.9
     self.go_to_joint(joint_goal)
     joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 2.7
-    joint_goal[2] = 0.01
-    joint_goal[3] = 0.01
+    joint_goal[1] = 2.87
+    joint_goal[2] = 2.52
+    joint_goal[3] = 0.83
     self.go_to_joint(joint_goal)
+    self.gripper_open()
+    self.gripper_open()
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 2.76
+    joint_goal[2] = 2.82
+    joint_goal[3] = 0.76
+    self.gripper_open()
+    self.gripper_open()
+    self.go_to_joint(joint_goal)
+    joint_goal = self.move_group.get_current_joint_values()
+    joint_goal[1] = 1.57
+    joint_goal[2] = 3.14
+    joint_goal[3] = 3.14
+    self.go_to_joint(joint_goal)
+    self.go_to_up()
+
 
   def go_to_up(self):
-    self.go_to_raise()
     joint_goal = self.move_group.get_current_joint_values()
     joint_goal[0] = 1.5708
     joint_goal[1] = 1.5708
@@ -636,6 +675,8 @@ def main():
           bb_targetter.select_target()
       if inp=='r':
           bb_targetter.reset_target_position()
+      if inp=='w':
+          bb_targetter.reset_bowl()
       if inp=='g':
           bb_targetter.go_to_manual_gripper()
       if inp=='b':

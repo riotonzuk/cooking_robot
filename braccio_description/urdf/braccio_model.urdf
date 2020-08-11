@@ -285,7 +285,7 @@
     <kd>1.0</kd>
     <mu1>500.0</mu1>
     <mu2>200.0</mu2>
-    <minDepth>0.005</minDepth>
+    <minDepth>0.002</minDepth>
     <maxVel>0</maxVel>
   </gazebo>
   <gazebo reference="left_gripper_link">
@@ -295,7 +295,7 @@
     <kd>1.0</kd>
     <mu1>500.0</mu1>
     <mu2>200.0</mu2>
-    <minDepth>0.005</minDepth>
+    <minDepth>0.002</minDepth>
     <maxVel>0</maxVel>
   </gazebo>
   <gazebo reference="base_link">
