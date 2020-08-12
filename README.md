@@ -65,12 +65,15 @@ t = target, pick up red block and drop on the ramp
 m = manual, manually enter location for pickup
 b = bowl, go through the preprogrammed bowl move
 r = reset_target, set block to new location, reset bowl
+e = evaluate, test pickup and collect statistics to file
 q = quit program
 ```
 
 Importantly, if you press `t` or `m` you'll be further prompted for whether you want to try to pickup from above or from the side.  The script will make a best attempt to find a suitable combination of joint positions to perform a pickup.  If that isn't possible, it'll attempt to push the object into position. If that isn't possible it'll just abort with a prompt.
 
-To reset, press `r` and then insert the (x, y) position for the red block to be reset to.  The robot can reach within a radius of about 0.4 from the origin (0,0), though the accessible .
+To reset, press `r` and then insert the (x, y) position for the red block to be reset to.  The robot can reach within a radius of about 0.5 from the origin (0,0).
+
+Finally, to run the evaluation script press `e` and enter the number of trials.  It takes probably 20-30 seconds per trial.  The results willbe saved to `eval_results.json` for later use.
 
 ## Learn more
 
@@ -86,4 +89,4 @@ If you have any questions, suggestions, or are just interested in reaching out, 
 
 I based this work off a lot of other things I found. I started with [CesMak/kuka_arm](https://github.com/CesMak/kuka_arm) ROS+gazebo project, but had to make a lot of adaptations to make it work with the Braccio arm.  I found this [braccio-study](https://github.com/dpakshimpo/braccio-study) repo as well, which reused the [braccio_arduino_ros_rviz](https://github.com/ohlr/braccio_arduino_ros_rviz) configuration, but didn't seem to run for me. Also, I couldn't use these packages alone, because I wanted to control using the MoveIt's python interface.
 
-Next, I followed the [tutorial](http://docs.ros.org/melodic/api/moveit_tutorials/html/index.html) for setting up MoveIt! with gazebo.  It turned out I need two slightly different versions of I kept running into the problem that the physics were really jerky. Finally, I found a solution on these ROS Answers posts ([1](https://answers.ros.org/question/291228/simple-box-grasping-fails/) [2](https://answers.gazebosim.org//question/22353/how-to-connect-the-moveit-planning-with-gazebo-simulation/)) that suggested I need to switch everything to effort_controllers.  Guided by these repos ([1](https://github.com/jonabalzer/braccio_moveit_config),[2](https://github.com/berkeleyopenarms/blue_moveit),[3]((https://github.com/kkumpa/ros-robotic-arm))), I figured out how to implement effort_controllers and getthem working with MoveIt. This ended up solving a lot.  Finally, I tweaked physics parameters a lot to dial in good reactions, again based on many many ROS answers posts.
+Next, I followed the [tutorial](http://docs.ros.org/melodic/api/moveit_tutorials/html/index.html) for setting up MoveIt! with gazebo.  It turned out I need two slightly different versions of the URDF to make it work (for reasons I still don't quite understand). I kept running into the problem that the physics were really jerky and I was constantly dropping the block. Finally, I found a solution on these ROS Answers posts ([1](https://answers.ros.org/question/291228/simple-box-grasping-fails/) [2](https://answers.gazebosim.org//question/22353/how-to-connect-the-moveit-planning-with-gazebo-simulation/)) that suggested I need to switch everything to effort_controllers.  Guided by these repos ([1](https://github.com/jonabalzer/braccio_moveit_config),[2](https://github.com/berkeleyopenarms/blue_moveit),[3](https://github.com/kkumpa/ros-robotic-arm)), I figured out how to implement effort_controllers and get them working with MoveIt. This ended up solving a lot.  Finally, I tweaked physics parameters a lot to dial in good reactions, again based on many many ROS answers posts.

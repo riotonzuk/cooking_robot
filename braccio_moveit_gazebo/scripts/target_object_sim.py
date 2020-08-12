@@ -3,6 +3,7 @@
 import sys
 import rospy
 import moveit_commander
+import time
 
 from gazebo_msgs.msg import LinkStates, ModelState
 from geometry_msgs.msg import Pose
@@ -147,7 +148,7 @@ class BraccioObjectTargetInterface(object):
         theta_shoulder = THETA_EXT
       theta_wrist, theta_elbow = get_other_angles(theta_shoulder)
       rand_targ = [rand_phi,theta_shoulder,theta_elbow, theta_wrist]
-      self.go_to_joint(rand_targ)
+      self.go_to_j(j0=rand_phi,j1=theta_shoulder,j2=theta_elbow,j3=theta_wrist)
       mouseX, mouseY = self.get_link_position(['kuka::left_gripper_link','kuka::right_gripper_link'])
       src_pts.append([mouseX,mouseY])
       dst_angs.append(rand_targ)
@@ -286,23 +287,29 @@ class BraccioObjectTargetInterface(object):
     if how=='top':
       s, joint_targets = self.get_down_targets(x,y)
       print joint_targets
-      if np.isnan(joint_targets[1]) and s < S_TOP_MAX:
+      if joint_targets[0]<0 or joint_targets[0]>3.14:
+        print '++++++ Not in reachable area, aborting ++++++'
+        return -1
+      if np.isnan(joint_targets[1]) and s < S_TOP_MAX and s > S_SIDE_MIN:
         print '++++++ Too far out, pulling backwards +++++'
         self.go_to_pull(joint_targets[0])
-        return
+        return 1
       if np.isnan(joint_targets[1]):
         print '++++++ Not in reachable area, aborting ++++++'
-        return
+        return -1
     elif how=='side':
       s, joint_targets = self.get_targets(x,y)
       print joint_targets
+      if joint_targets[0]<0 or joint_targets[0]>3.14:
+        print '++++++ Not in reachable area, aborting ++++++'
+        return -1
       if np.isnan(joint_targets[1]) and s < S_SIDE_MAX and s > S_SIDE_MIN:
         print '++++++ Too close, pushing backwards +++++'
         self.go_to_push(joint_targets[0])
-        return
+        return 1
       if np.isnan(joint_targets[1]):
         print '++++++ Not in reachable area, aborting ++++++'
-        return
+        return -1
 
     self.go_to_raise()
     self.gripper_open()
@@ -313,7 +320,10 @@ class BraccioObjectTargetInterface(object):
                  j3=float(joint_targets[3]))
 
     self.gripper_close()
+    if how=='top' and joint_targets[2]<3:
+      self.go_to_j(j2=float(joint_targets[2])+0.1)
     self.go_to_home()
+    return 0
 
   def go_to_manual_joint(self):
     joint_goal = self.move_group.get_current_joint_values()
@@ -333,7 +343,7 @@ class BraccioObjectTargetInterface(object):
     tst = raw_input()
     if tst!='':
         y = float(tst)
-    self.go_to_xy(x, y, DEFAULT_ROT, how)
+    return self.go_to_xy(x, y, DEFAULT_ROT, how)
 
   def go_to_manual_gripper(self):
     print 'grip position?'
@@ -345,7 +355,7 @@ class BraccioObjectTargetInterface(object):
   def go_to_target(self, how):
     x,y,r = self.get_box_position()
     print x, y, r
-    self.go_to_xy(x, y, r, how)
+    return self.go_to_xy(x, y, r, how)
 
   def go_to_home(self):
     self.go_to_raise()
@@ -356,61 +366,60 @@ class BraccioObjectTargetInterface(object):
   def go_to_bowl(self):
     self.go_to_up()
     self.gripper_open()
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[0] = 0.45
-    joint_goal[1] = 1.57
-    joint_goal[2] = 3.14
-    joint_goal[3] = 3.14
-    self.go_to_joint(joint_goal)
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 2.76
-    joint_goal[2] = 2.82
-    joint_goal[3] = 0.76
-    self.go_to_joint(joint_goal)
+    self.go_to_j(j0=0.45,j1=1.57,j2=3.14,j3=3.14)
+    self.go_to_j(j1=2.76,j2=2.82,j3=0.76)
     self.gripper_middle()
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 2.87
-    joint_goal[2] = 2.52
-    joint_goal[3] = 0.83
-    self.go_to_joint(joint_goal)
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 2.5
-    joint_goal[2] = 3.01
-    joint_goal[3] = 0.83
-    self.go_to_joint(joint_goal)
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[0] = 0.9
-    self.go_to_joint(joint_goal)
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 2.87
-    joint_goal[2] = 2.52
-    joint_goal[3] = 0.83
-    self.go_to_joint(joint_goal)
+    self.go_to_j(j1=2.87,j2=2.52,j3=0.83)
+    self.go_to_j(j1=2.5,j2=3.01,j3=0.83)
+    self.go_to_j(j0=0.9)
+    self.go_to_j(j1=2.87,j2=2.52,j3=0.83)
     self.gripper_open()
+    self.go_to_j(j1=2.76,j2=2.82,j3=0.76)
     self.gripper_open()
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 2.76
-    joint_goal[2] = 2.82
-    joint_goal[3] = 0.76
-    self.gripper_open()
-    self.gripper_open()
-    self.go_to_joint(joint_goal)
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[1] = 1.57
-    joint_goal[2] = 3.14
-    joint_goal[3] = 3.14
-    self.go_to_joint(joint_goal)
+    self.go_to_j(j1=1.57,j2=3.14,j3=3.14)
     self.go_to_up()
 
 
   def go_to_up(self):
-    joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[0] = 1.5708
-    joint_goal[1] = 1.5708
-    joint_goal[2] = 1.5708
-    joint_goal[3] = 1.5708
-    self.go_to_joint(joint_goal)
+    self.go_to_j(j0=1.5708,j1=1.5708,j2=1.5708,j3=1.5708)
 
+  def run_eval(self):
+    evl_data = []
+    print "how many trials?"
+    tst = raw_input()
+    N = int(tst)
+    for i in range(N):
+      print "Running trial " + str(i)
+      how = 'side' if np.random.uniform()<0.5 else 'top'
+      extent = 0.5 if how=='side' else S_TOP_MAX
+      x = np.random.uniform()*extent
+      y = -extent + 2*extent*np.random.uniform()
+
+      self.reset_link('unit_box_0', x, y, 0)
+      self.reset_link('my_mesh', -0.15, -0.325, 0)
+
+      time.sleep(1)
+
+      record = {'target': [x,y], 'how': how}
+      state = 1
+      results = []
+      for tries in range(3):
+        x_, y_, r_ = self.get_link_position(['unit_box_0::link'])
+        results.append([x_,y_,state])
+        if state < 1:
+          break
+        state = self.go_to_target(how)
+      if state==0:
+        self.go_to_bowl()
+        x_, y_, r_ = self.get_link_position(['unit_box_0::link'])
+        results.append([x_,y_,state])
+
+      record['box_results']=results
+      x_, y_, r_ = self.get_link_position(['my_mesh::body'])
+      record['bowl_result'] = [x_, y_]
+      evl_data.append(record)
+      with open('eval_results.json', 'w') as f:
+        json.dump(evl_data,f)
 
 class Arm3Link:
     """
@@ -491,6 +500,7 @@ def print_instructions():
   print "m = manual, manually enter location for pickup"
   print "b = bowl, go through the preprogrammed bowl move"
   print "r = reset_target, set block to new location, reset bowl"
+  print "e = evaluate, test pickup and collect statistics to file"
   print "q = quit program"
   print ""
   print "type next command:"
@@ -560,6 +570,8 @@ def main():
           bb_targetter.reset_target_position()
       if inp=='b':
           bb_targetter.go_to_bowl()
+      if inp=='e':
+          bb_targetter.run_eval()
 
 
 if __name__ == '__main__':
