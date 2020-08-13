@@ -150,8 +150,13 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 #############
 
 
-install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+install(DIRECTORY launch parse_and_publish DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 #install(DIRECTORY controller DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+add_executable(parse_and_publish parse_and_publish/parse_and_publish.cpp)
+target_link_libraries(parse_and_publish ${catkin_LIBRARIES})
+
+add_dependencies(parse_and_publish std_msgs)
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html

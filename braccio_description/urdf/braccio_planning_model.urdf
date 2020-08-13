@@ -169,7 +169,7 @@
         </collision>
     </link>
 
-    <joint name="joint_a1" type="revolute">
+    <joint name="base_joint" type="revolute">
         <axis xyz="0 0 -1" />
         <limit effort="1000.0" lower="0.0" upper="3.1416" velocity="1.0" />
         <origin rpy="0 0 0" xyz="0 0 0" />
@@ -178,7 +178,7 @@
         <dynamics damping="0.1" friction="0.001" />
     </joint>
 
-    <joint name="joint_a2" type="revolute">
+    <joint name="shoulder_joint" type="revolute">
         <axis xyz="1 0 0" />
         <limit effort="1000.0" lower="0.2618" upper="2.8798" velocity="1.0" />
         <origin rpy="-1.5708 0 0" xyz="0 -.002 0.072" />
@@ -187,7 +187,7 @@
         <dynamics damping="0.1" friction="0.001" />
     </joint>
 
-    <joint name="joint_a3" type="revolute">
+    <joint name="elbow_joint" type="revolute">
         <axis xyz="1 0 0" />
         <limit effort="1000.0" lower="0" upper="3.1416" velocity="1.0" />
         <origin rpy="-1.5708 0 0" xyz="0 0 0.125" />
@@ -196,7 +196,7 @@
         <dynamics damping="0.1" friction="0.001" />
     </joint>
 
-    <joint name="joint_a4" type="revolute">
+    <joint name="wrist_pitch_joint" type="revolute">
         <axis xyz="1 0 0" />
         <limit effort="1000.0" lower="0" upper="3.1416" velocity="1.0" />
         <origin rpy="-1.5708 0 0" xyz="0 0 0.125" />
@@ -205,7 +205,7 @@
         <dynamics damping="0.1" friction="0.001" />
     </joint>
 
-    <joint name="joint_a5" type="revolute">
+    <joint name="wrist_roll_joint" type="revolute">
         <axis xyz="0 0 -1" />
         <limit effort="1000.0" lower="0.0" upper="3.1416" velocity="1.0" />
         <origin rpy="0 0 1.5708" xyz="0 0.0 0.06" />
@@ -243,7 +243,7 @@
 
   <transmission name="a1_trans">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a1">
+    <joint name="base_joint">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="shoulder_pan_motor">
@@ -253,7 +253,7 @@
   </transmission>
   <transmission name="a2_trans">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a2">
+    <joint name="shoulder_joint">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="shoulder_lift_motor">
@@ -263,7 +263,7 @@
   </transmission>
   <transmission name="a3_trans">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a3">
+    <joint name="elbow_joint">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="elbow_motor">
@@ -273,7 +273,7 @@
   </transmission>
   <transmission name="a4_trans">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a4">
+    <joint name="wrist_pitch_joint">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="wrist_1_motor">
@@ -283,7 +283,7 @@
   </transmission>
   <transmission name="a5_trans">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_a5">
+    <joint name="wrist_roll_joint">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="wrist_2_motor">

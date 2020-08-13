@@ -175,7 +175,7 @@
             <contact>
               <ode>
                 <min_depth>0.002</min_depth>
-                <kp>100000</kp>
+                <kp>1000000</kp>
               </ode>
             </contact>
             <bounce/>

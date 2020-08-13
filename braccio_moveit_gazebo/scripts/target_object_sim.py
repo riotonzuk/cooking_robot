@@ -226,7 +226,7 @@ class BraccioObjectTargetInterface(object):
     self.go_gripper(0.2)
 
   def gripper_middle(self):
-    self.go_gripper(0.6)
+    self.go_gripper(0.5)
 
   def go_gripper(self, val):
     joint_goal = self.gripper_group.get_current_joint_values()
@@ -370,7 +370,7 @@ class BraccioObjectTargetInterface(object):
     self.go_to_j(j1=2.76,j2=2.82,j3=0.76)
     self.gripper_middle()
     self.go_to_j(j1=2.87,j2=2.52,j3=0.83)
-    self.go_to_j(j1=2.5,j2=3.01,j3=0.83)
+    self.go_to_j(j1=2.5,j2=2.52,j3=0.83)
     self.go_to_j(j0=0.9)
     self.go_to_j(j1=2.87,j2=2.52,j3=0.83)
     self.gripper_open()
@@ -572,6 +572,8 @@ def main():
           bb_targetter.go_to_bowl()
       if inp=='e':
           bb_targetter.run_eval()
+      if inp=='u':
+          bb_targetter.go_to_up()
 
 
 if __name__ == '__main__':
