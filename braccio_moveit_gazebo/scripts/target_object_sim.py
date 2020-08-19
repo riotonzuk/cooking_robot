@@ -132,7 +132,7 @@ class BraccioObjectTargetInterface(object):
     """scan a series of points and record points in gazebo and robot frames"""
     src_pts = []
     dst_angs = []
-    mouseX, mouseY = self.get_link_position(['kuka::base_link'])
+    mouseX, mouseY, r_ = self.get_link_position(['kuka::base_link'])
     src_pts.append([mouseX,mouseY])
 
     self.gripper_middle()
@@ -149,7 +149,7 @@ class BraccioObjectTargetInterface(object):
       theta_wrist, theta_elbow = get_other_angles(theta_shoulder)
       rand_targ = [rand_phi,theta_shoulder,theta_elbow, theta_wrist]
       self.go_to_j(j0=rand_phi,j1=theta_shoulder,j2=theta_elbow,j3=theta_wrist)
-      mouseX, mouseY = self.get_link_position(['kuka::left_gripper_link','kuka::right_gripper_link'])
+      mouseX, mouseY, r_ = self.get_link_position(['kuka::left_gripper_link','kuka::right_gripper_link'])
       src_pts.append([mouseX,mouseY])
       dst_angs.append(rand_targ)
     with open('calibration.json', 'w') as f:
@@ -193,7 +193,7 @@ class BraccioObjectTargetInterface(object):
       print 'estimated l = ' + str(self.l)
       print 'estimated L = ' + str(self.L)
       cv2.destroyAllWindows()
-    except FileNotFoundError:
+    except:
       print 'calibration.json not in current directory, run calibration first'
 
   def go_to_j(self, j0=None, j1=None, j2=None, j3=None):

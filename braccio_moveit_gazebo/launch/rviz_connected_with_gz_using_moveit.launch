@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="connect_braccio" default="false" />
   <arg name="robot_name" default="kuka" />
   <arg name="use_ros_control" default="False" />
   <arg name="use_rviz" default="False" />
