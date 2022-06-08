@@ -66,4 +66,4 @@ The script will make a best attempt to find a suitable combination of joint posi
 
 ## Credits
 
-[lots-of-things/braccio-moveit-gazebo](https://github.com/lots-of-things/braccio_moveit_gazebo) for a solid base of a working robot arm that could pick / place things.
+[lots-of-things/braccio-moveit-gazebo](https://github.com/lots-of-things/braccio_moveit_gazebo) for a solid base of a working robot arm that picks / places things.
