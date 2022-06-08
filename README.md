@@ -42,7 +42,7 @@ roslaunch cooking_robot rviz_connected_with_gz_using_moveit.launch
 
 Gazebo should open with a scene that contains the robot and the items.  You may need to reposition the display camera to see everything.
 
-![Gazebo scene](doc/gazebo_open_cooking_robot.png=100x100)
+![Gazebo scene](doc/gazebo_open_cooking_robot.png =100x100)
 
 In the second terminal run this to bring up the command line control interface
 ```
