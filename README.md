@@ -2,8 +2,6 @@
 
 This is a package with a standalone simulation of a Braccio arm that performs a tea-making routine. The involved objects can be flexibly changed in Gazebo and the routine will still work (however, cannot guarantee drinkable tea at the end of it when positions are changed).
 
-![Tea-making Routine](doc/cooking_robot.gif)
-
 The package comes with a command line interface to control the simulated arm.
 
 ## Installation
