@@ -143,8 +143,8 @@
             <origin rpy="0 1.5708 0" xyz="0 -0.012 0" />
             <geometry>
                 <mesh filename="package://braccio_description/stl/braccio_left_gripper.stl" scale="0.001 0.001 0.001" />
-            </geometry>
-        </collision>
+	    </geometry>
+  	</collision>
     </link>
     <link name="right_gripper_link">
         <visual>
@@ -161,11 +161,11 @@
             <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05" />
         </inertial>
 
-        <collision>
-            <origin rpy="0 1.5708 0" xyz="0 -0.012 0.010" />
+	<collision>
+            <origin rpy="0 1.5708 0" xyz="0 -0.012 0" />
             <geometry>
-                <mesh filename="package://braccio_description/stl/braccio_right_gripper.stl" scale="0.001 0.001 0.001" />
-            </geometry>
+                <mesh filename="package://braccio_description/stl/braccio_left_gripper.stl" scale="0.001 0.001 0.001" />
+	    </geometry>	
         </collision>
     </link>
 

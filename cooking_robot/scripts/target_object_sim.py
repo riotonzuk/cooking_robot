@@ -15,6 +15,18 @@ import scipy.optimize
 import cv2
 import json
 
+GRIPPER_DECAY_FN = lambda dst: np.exp(dst - 0.42)
+PAN_GRIPPER_DECAY_FN = lambda t: np.exp(t - 0.44)
+
+GRIPPER_CLAMP_VALS = {
+    "closed": 1.2,
+    "big_bowl": 1.02,
+    "bowl": 1.07,
+    "pan": 0.79,
+    "open": 0.2,
+    "middle": 0.5
+}
+
 THETA_EXT = 0.27
 THETA_RET = np.pi/4
 
@@ -67,7 +79,6 @@ class BraccioObjectTargetInterface(object):
     self.states_sub = rospy.Subscriber("/gazebo/link_states", LinkStates, self.linkstate_callback)
 
   def linkstate_callback(self, data):
-    """callback to get link location for cube from gazebo"""
     try:
       self.linkstate_data = data
     except ValueError:
@@ -75,6 +86,7 @@ class BraccioObjectTargetInterface(object):
 
   def reset_link(self, name, x, y, z):
     state_msg = ModelState()
+    print(name, x, y, z)
     state_msg.model_name = name
     state_msg.pose.position.x = float(x)
     state_msg.pose.position.y = float(y)
@@ -91,17 +103,6 @@ class BraccioObjectTargetInterface(object):
     except rospy.ServiceException, e:
         print "Service call failed: %s" % e
 
-  def reset_target_position(self):
-    """reset block and bowl"""
-    print 'reset block x='
-    x = raw_input()
-    print 'reset block y='
-    y = raw_input()
-    print 'reset block z='
-    z = raw_input()
-    self.reset_link('unit_box_0', x, y, z)
-    self.reset_link('my_mesh', -0.15, -0.325, 0)
-
   def transform(self, x1, y1, r):
     """transform from gazebo coordinates into braccio coordinates"""
     if self.homography is not None:
@@ -111,8 +112,8 @@ class BraccioObjectTargetInterface(object):
     else:
       raise ValueError('run or load calibration first!')
 
-  def get_box_position(self):
-    x, y, r = self.get_link_position(['unit_box_0::link'])
+  def get_position(self, name):
+    x, y, r = self.get_link_position(["%s::%s::link" % (name, name)])
     return self.transform(x,y,r)
 
   def get_link_position(self, link_names):
@@ -135,7 +136,7 @@ class BraccioObjectTargetInterface(object):
     mouseX, mouseY, r_ = self.get_link_position(['kuka::base_link'])
     src_pts.append([mouseX,mouseY])
 
-    self.gripper_middle()
+    self.go_gripper(GRIPPER_CLAMP_VALS["middle"])
     N = 8
     phi_min = np.pi/6
     phi_max = np.pi - np.pi/6
@@ -155,7 +156,7 @@ class BraccioObjectTargetInterface(object):
     with open('calibration.json', 'w') as f:
       json.dump({'src_pts':src_pts,'dst_angs':dst_angs},f)
     self.load_calibrate()
-    self.go_to_up()
+    self.go_to_rest()
 
   def load_calibrate(self):
     """load mapping points from gazebo to robot frame, estimate l and L, generate homography map"""
@@ -196,7 +197,7 @@ class BraccioObjectTargetInterface(object):
     except:
       print 'calibration.json not in current directory, run calibration first'
 
-  def go_to_j(self, j0=None, j1=None, j2=None, j3=None):
+  def go_to_j(self, j0=None, j1=None, j2=None, j3=None, j4=np.pi/2):
     """update arm joints"""
     joint_goal = self.move_group.get_current_joint_values()
     if j0 is not None:
@@ -207,26 +208,15 @@ class BraccioObjectTargetInterface(object):
       joint_goal[2]=j2
     if j3 is not None:
       joint_goal[3]=j3
+    
+    joint_goal[4]=j4
     self.go_to_joint(joint_goal)
 
   def go_to_joint(self, joint_targets):
     joint_goal = self.move_group.get_current_joint_values()
-    joint_goal[0] = joint_targets[0]
-    joint_goal[1] = joint_targets[1]
-    joint_goal[2] = joint_targets[2]
-    joint_goal[3] = joint_targets[3]
-    joint_goal[4] = 1.5708
-    ret = self.move_group.go(joint_goal, wait=True)
+    joint_goal[:] = joint_targets
+    self.move_group.go(joint_goal, wait=True)
     self.move_group.stop()
-
-  def gripper_close(self):
-    self.go_gripper(1.2)
-
-  def gripper_open(self):
-    self.go_gripper(0.2)
-
-  def gripper_middle(self):
-    self.go_gripper(0.5)
 
   def go_gripper(self, val):
     joint_goal = self.gripper_group.get_current_joint_values()
@@ -235,23 +225,9 @@ class BraccioObjectTargetInterface(object):
     self.gripper_group.go(joint_goal, wait=True)
     self.gripper_group.stop()
 
-  def go_to_raise(self):
-    self.go_to_j(j1=1.15,j2=0.13,j3=2.29)
-
-  def go_to_pull(self, phi):
-    self.go_to_raise()
-    self.gripper_close()
-    if phi:
-      self.go_to_j(j0=float(phi))
-    self.go_to_j(j1=0.3,j2=1.8,j3=1.8)
-    self.go_to_j(j1=0.3,j2=1.8,j3=0.1)
-    self.go_to_j(j1=1.3,j2=0.4,j3=0.01)
-    self.go_to_j(j1=1.5,j2=0.4,j3=0.1)
-    self.go_to_j(j1=0.3,j2=1.8,j3=1.8)
-
   def go_to_push(self, phi):
     self.go_to_raise()
-    self.gripper_close()
+    self.go_gripper(GRIPPER_CLAMP_VALS["closed"])
     if phi:
       self.go_to_j(j0=float(phi))
     self.go_to_j(j1=2.7,j2=0.01,j3=0.01)
@@ -271,155 +247,102 @@ class BraccioObjectTargetInterface(object):
       return s, [phi, np.NaN, np.NaN, np.NaN]
     return s, [phi, q[0], q[1]+np.pi/2, q[2]+np.pi/2]
 
-  def get_down_targets(self,x,y):
-    s, phi = cart2pol(x,y)
-    print s, phi
-    q = self.kinematics.inv_kin(s, Z_MIN, Z_MAX_DOWN, -np.pi/2)
-    xy = self.kinematics.get_xy(q)
-    if np.abs(xy[0]-s) > CLOSE_ENOUGH:
-      print 'NO SOLUTION FOUND'
-      print 'goal distance = '+str(s)
-      print 'closest solution = '+str(xy[0])
-      return s, [phi, np.NaN, np.NaN, np.NaN]
-    return s, [phi, q[0], q[1]+np.pi/2, q[2]+np.pi/2]
 
-  def go_to_xy(self, x, y, r, how):
-    if how=='top':
-      s, joint_targets = self.get_down_targets(x,y)
-      print joint_targets
-      if joint_targets[0]<0 or joint_targets[0]>3.14:
-        print '++++++ Not in reachable area, aborting ++++++'
-        return -1
-      if np.isnan(joint_targets[1]) and s < S_TOP_MAX and s > S_SIDE_MIN:
-        print '++++++ Too far out, pulling backwards +++++'
-        self.go_to_pull(joint_targets[0])
-        return 1
-      if np.isnan(joint_targets[1]):
-        print '++++++ Not in reachable area, aborting ++++++'
-        return -1
-    elif how=='side':
-      s, joint_targets = self.get_targets(x,y)
-      print joint_targets
-      if joint_targets[0]<0 or joint_targets[0]>3.14:
-        print '++++++ Not in reachable area, aborting ++++++'
-        return -1
-      if np.isnan(joint_targets[1]) and s < S_SIDE_MAX and s > S_SIDE_MIN:
-        print '++++++ Too close, pushing backwards +++++'
-        self.go_to_push(joint_targets[0])
-        return 1
-      if np.isnan(joint_targets[1]):
-        print '++++++ Not in reachable area, aborting ++++++'
-        return -1
+  def go_to_xy(self, x, y):
+    s, joint_targets = self.get_targets(x,y)
+
+    print "joint targets", joint_targets
+    if (np.isnan(joint_targets[1]) and s >= S_SIDE_MAX or s <= S_SIDE_MIN) or \
+        joint_targets[0]<0 or joint_targets[0]>3.14:
+      print '++++++ Not in reachable area, aborting ++++++'
+      return "-1"
+    elif np.isnan(joint_targets[1]) and s < S_SIDE_MAX and s > S_SIDE_MIN:
+      print '++++++ Too close, pushing backwards +++++'
+      self.go_to_push(joint_targets[0])
+      return "-2"
 
     self.go_to_raise()
-    self.gripper_open()
+    self.go_gripper(GRIPPER_CLAMP_VALS["open"])
+    
     self.go_to_j(j0=float(joint_targets[0]))
-
+    
     self.go_to_j(j1=float(joint_targets[1]),
                  j2=float(joint_targets[2]),
                  j3=float(joint_targets[3]))
+    return s, joint_targets
 
-    self.gripper_close()
-    if how=='top' and joint_targets[2]<3:
-      self.go_to_j(j2=float(joint_targets[2])+0.1)
-    self.go_to_home()
-    return 0
+  def grab(self, item, dist_decay_fn):
+    phi = "-2"
+    while phi == "-2":
+        s, angles = self.go_to_xy(*self.get_position(item)[:-1])
+        if type(angles) != str:
+            phi = angles[0]
+            self.go_gripper(GRIPPER_CLAMP_VALS[item] * dist_decay_fn(s))
+    return phi
 
-  def go_to_manual_joint(self):
-    joint_goal = self.move_group.get_current_joint_values()
-    for i in range(len(joint_goal)):
-      print 'joint' + str(i) + ' ' + str(joint_goal[i])
-      tst = raw_input()
-      if tst!='':
-          joint_goal[i] = float(tst)
-    self.go_to_joint(joint_goal)
+  def pour_contents(self, from_container, to_container, gripper_decay_fn=GRIPPER_DECAY_FN, pour_angle=np.pi/4):
+    # pick up from-container
+    from_phi = self.grab(from_container, gripper_decay_fn)
 
-  def go_to_manual(self, how):
-    print 'pos x?'
-    tst = raw_input()
-    if tst!='':
-        x = float(tst)
-    print 'pos y?'
-    tst = raw_input()
-    if tst!='':
-        y = float(tst)
-    return self.go_to_xy(x, y, DEFAULT_ROT, how)
+    # move from-container to right above to-container
+    self.go_to_raise(to_container)
+    _, [to_phi, j1, j2, j3] = self.get_targets(*self.get_position(to_container)[:-1])
+    self.go_to_j(j0=to_phi-0.13)
 
-  def go_to_manual_gripper(self):
-    print 'grip position?'
-    tst = raw_input()
-    if tst!='':
-        v = float(tst)
-    self.go_gripper(v)
+    # angulate from-container to pour contents into to-container
+    self.go_to_j(j4=pour_angle)
 
-  def go_to_target(self, how):
-    x,y,r = self.get_box_position()
-    print x, y, r
-    return self.go_to_xy(x, y, r, how)
+    # undo angulation and put from-container back
+    self.go_to_j()
+    self.go_to_home(from_phi)
 
-  def go_to_home(self):
-    self.go_to_raise()
-    self.go_to_j(j0=3.14)
-    self.gripper_open()
-    self.gripper_open()
+  def cook_tea(self):
+    # add cup of water to pan
+    self.pour_contents("big_bowl", "pan", pour_angle=0)
+    # add bowl containing tea powder to pan
+    self.pour_contents("bowl", "pan", pour_angle=0)
 
-  def go_to_bowl(self):
-    self.go_to_up()
-    self.gripper_open()
-    self.go_to_j(j0=0.45,j1=1.57,j2=3.14,j3=3.14)
-    self.go_to_j(j1=2.76,j2=2.82,j3=0.76)
-    self.gripper_middle()
-    self.go_to_j(j1=2.87,j2=2.52,j3=0.83)
-    self.go_to_j(j1=2.5,j2=2.52,j3=0.83)
-    self.go_to_j(j0=0.9)
-    self.go_to_j(j1=2.87,j2=2.52,j3=0.83)
-    self.gripper_open()
-    self.go_to_j(j1=2.76,j2=2.82,j3=0.76)
-    self.gripper_open()
-    self.go_to_j(j1=1.57,j2=3.14,j3=3.14)
-    self.go_to_up()
+    # move pan to stove
+    pan_phi = self.grab("pan", PAN_GRIPPER_DECAY_FN)
+    _, [stove_phi, _, _, _] = self.get_targets(*self.get_position("stove")[:-1])
+    self.go_to_raise("stove")
+    self.go_to_home(stove_phi)
 
+    # wait a few mins -- not in demo
+    self.go_to_rest()
 
-  def go_to_up(self):
+    # TODO: pour contents of pan into tea cup
+    # self.pour_contents("pan", "cup", pour_angle=0, gripper_decay_fn=lambda t: np.exp(t-0.48))
+
+    # put pan back
+    self.grab("pan", PAN_GRIPPER_DECAY_FN)
+    self.go_to_raise("stove")
+    self.go_to_home(pan_phi)
+
+    # voila!
+    self.go_to_rest()
+
+  def go_to_raise(self, goal_type=None):
+    if goal_type is None:
+        self.go_to_j(j1=1.15,j2=0.13,j3=2.29)
+    elif goal_type == "stove":
+        self.go_to_j(j1=1.15,j2=0.13,j3=2.1)
+    elif goal_type == "pan":
+        self.go_to_j(j1=1.15,j2=0.13,j3=1.95)
+    elif goal_type == "big_bowl":
+        self.go_to_j(j1=1.15,j2=0.13,j3=2.8)
+    else:
+        raise ValueError("Bad goal type %s" % goal_type)
+
+  def go_to_home(self, phi):
+    # TODO: change back to go_to_raise()
+    self.go_to_j(j0=phi)
+    self.go_to_j(j1=0.9)
+    self.go_gripper(GRIPPER_CLAMP_VALS["open"])
+
+  def go_to_rest(self):
     self.go_to_j(j0=1.5708,j1=1.5708,j2=1.5708,j3=1.5708)
 
-  def run_eval(self):
-    evl_data = []
-    print "how many trials?"
-    tst = raw_input()
-    N = int(tst)
-    for i in range(N):
-      print "Running trial " + str(i)
-      how = 'side' if np.random.uniform()<0.5 else 'top'
-      extent = 0.5 if how=='side' else S_TOP_MAX
-      x = np.random.uniform()*extent
-      y = -extent + 2*extent*np.random.uniform()
-
-      self.reset_link('unit_box_0', x, y, 0)
-      self.reset_link('my_mesh', -0.15, -0.325, 0)
-
-      time.sleep(1)
-
-      record = {'target': [x,y], 'how': how}
-      state = 1
-      results = []
-      for tries in range(3):
-        x_, y_, r_ = self.get_link_position(['unit_box_0::link'])
-        results.append([x_,y_,state])
-        if state < 1:
-          break
-        state = self.go_to_target(how)
-      if state==0:
-        self.go_to_bowl()
-        x_, y_, r_ = self.get_link_position(['unit_box_0::link'])
-        results.append([x_,y_,state])
-
-      record['box_results']=results
-      x_, y_, r_ = self.get_link_position(['my_mesh::body'])
-      record['bowl_result'] = [x_, y_]
-      evl_data.append(record)
-      with open('eval_results.json', 'w') as f:
-        json.dump(evl_data,f)
 
 class Arm3Link:
     """
@@ -497,53 +420,15 @@ def print_instructions():
   print "==================== Instructions: ===================="
   print "c = calibrate, rerun calibration routine"
   print "t = target, pick up red block and drop on the ramp"
-  print "m = manual, manually enter location for pickup"
-  print "b = bowl, go through the preprogrammed bowl move"
-  print "r = reset_target, set block to new location, reset bowl"
-  print "e = evaluate, test pickup and collect statistics to file"
   print "q = quit program"
   print ""
   print "type next command:"
 
 def main():
-  print """
-                _____  _____  _    _ _____ _   _  ____
-          /\   |  __ \|  __ \| |  | |_   _| \ | |/ __ |
-         /  \  | |__) | |  | | |  | | | | |  \| | |  | |
-        / /\ \ |  _  /| |  | | |  | | | | | . ` | |  | |
-       / ____ \| | \ \| |__| | |__| |_| |_| |\  | |__| |
-      /_/    \_|_|  \_|_____/ \____/|_____|_| \_|\____/
-        ____  _____           _____ _____ _____ ____
-       |  _ \|  __ \    /\   / ____/ ____|_   _/ __ |
-       | |_) | |__) |  /  \ | |   | |      | || |  | |
-       |  _ <|  _  /  / /\ \| |   | |      | || |  | |
-       | |_) | | \ \ / ____ | |___| |____ _| || |__| |
-       |____/|_|  \_/_/    \_\_____\_____|_____\____/
-    _____ _____ _____ _  __    _____  _____   ____  _____
-   |  __ |_   _/ ____| |/ /_  |  __ \|  __ \ / __ \|  __ |
-   | |__) || || |    | ' _| |_| |  | | |__) | |  | | |__) |
-   |  ___/ | || |    |  |_   _| |  | |  _  /| |  | |  ___/
-   | |    _| || |____| . \|_| | |__| | | \ \| |__| | |
-   |_|   |_____\_____|_|\_\   |_____/|_|  \_\\____/|_|
-   _____ _____ __  __ _    _ _            _______ ____  _____
-  / ____|_   _|  \/  | |  | | |        /\|__   __/ __ \|  __ |
- | (___   | | | \  / | |  | | |       /  \  | | | |  | | |__) |
-  \___ \  | | | |\/| | |  | | |      / /\ \ | | | |  | |  _  /
-  ____) |_| |_| |  | | |__| | |____ / ____ \| | | |__| | | \ |
- |_____/|_____|_|  |_|\____/|______/_/    \_|_|  \____/|_|  \_\
-"""
   print "Loading ...."
   bb_targetter = BraccioObjectTargetInterface()
 
   bb_targetter.load_calibrate()
-  print ""
-  print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-
-  print "  Welcome to the Arduino Braccio Pick+Drop Simulator!"
-  print ""
-  print "This is an example program for simulating control of"
-  print "a Braccio arm using ROS and Gazebo physics simulator."
-  print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
   while True:
       print_instructions()
@@ -553,27 +438,9 @@ def main():
       if inp=='c':
           bb_targetter.calibrate()
       if inp=='t':
-        print 'pick from top (t) or side (s)?'
-        inp2 = raw_input()
-        if inp2 == 't':
-          bb_targetter.go_to_target('top')
-        if inp2 == 's':
-          bb_targetter.go_to_target('side')
-      if inp=='m':
-        print 'pick from top (t) or side (s)?'
-        inp2 = raw_input()
-        if inp2 == 't':
-          bb_targetter.go_to_manual('top')
-        if inp2 == 's':
-          bb_targetter.go_to_manual('side')
-      if inp=='r':
-          bb_targetter.reset_target_position()
-      if inp=='b':
-          bb_targetter.go_to_bowl()
-      if inp=='e':
-          bb_targetter.run_eval()
-      if inp=='u':
-          bb_targetter.go_to_up()
+        bb_targetter.cook_tea()
+      if inp=='d':
+          bb_targetter.go_to_rest()
 
 
 if __name__ == '__main__':
