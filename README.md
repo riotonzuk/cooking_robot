@@ -50,9 +50,6 @@ source devel/setup.bash
 rosrun braccio_moveit_gazebo target_object_sim.py
 ```
 
-You should see the following splash screen after a few seconds
-![Command Line Program Welcome](doc/cmd_line_welcome.png)
-
 
 ### Using the control interface
 After you've launched the program a menu will pop up with options to
