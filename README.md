@@ -45,7 +45,7 @@ Gazebo should open with a scene that contains the robot and the items.  You may 
 In the second terminal run this to bring up the command line control interface
 ```
 source devel/setup.bash
-rosrun braccio_moveit_gazebo target_object_sim.py
+rosrun cooking_robot target_object_sim.py
 ```
 
 
